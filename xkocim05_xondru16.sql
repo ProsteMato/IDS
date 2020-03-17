@@ -25,7 +25,7 @@ CREATE TABLE kuzelnik
 (
     id_kuzelnik INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
     meno        VARCHAR(255)  NOT NULL,
-    mana        INT           NOT NULL,
+    mana        INT           NOT NULL CHECK ( mana >= 0 ),
     uroven      VARCHAR(255)  NOT NULL
 );
 
@@ -56,10 +56,10 @@ CREATE TABLE element
 CREATE TABLE miesto_magie
 (
     id_miesto   INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
-    suradnica_X   INT NOT NULL, -- TODO check kladné
-    suradnica_Y   INT NOT NULL,  -- TODO check kladné
+    suradnica_X   INT NOT NULL CHECK ( suradnica_X>=0 ),
+    suradnica_Y   INT NOT NULL CHECK (  suradnica_Y>=0 ),
     suradnica_Z   INT NOT NULL,
-    velkost_presakovania INT  NOT NULL, -- TODO check kladné default 1?
+    velkost_presakovania INT  DEFAULT 1 CHECK (velkost_presakovania>0),
     id_miesto_element   INT NOT NULL,
     CONSTRAINT id_miesto_element_FK
             FOREIGN KEY (id_miesto_element)
@@ -153,7 +153,7 @@ INSERT INTO miesto_magie( suradnica_x, suradnica_y, suradnica_z, velkost_presako
 VALUES (12, 189,-18, 10, 1);
 
 INSERT INTO miesto_magie(suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
-VALUES (1289, 42, 1987, 47, 2);
+VALUES (1289, 42, 1987, 44, 2);
 
 INSERT INTO miesto_magie(suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
 VALUES (74982,12785,-1745,1,1);
@@ -189,6 +189,3 @@ VALUES (2, 1);
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
 VALUES (4, 2);
-
--- checking inserted values --
-SELECT meno from kuzelnik;
