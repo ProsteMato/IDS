@@ -325,15 +325,23 @@ INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
 
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
 
+-- vyberie všetky názvy kúziel a názvy elementov
 SELECT kuzlo.nazov, element.nazov
 FROM kuzlo
+-- spoji ich do jednej tabuľky na základe spoločných id elementu
 LEFT JOIN element ON kuzlo.id_prim_elementu = element.id_element;
 
+-- vyberie meno kuzelnika a count pre daného kuzelnika
 SELECT kuzelnik.meno, COUNT(id_historia_grimoar)
 FROM historia_grimoar
+-- spoji dve tabuľky do jednej za pomoci rovnakého id kuzelnika
 LEFT JOIN kuzelnik ON historia_grimoar.id_historia_kuzelnik = kuzelnik.id_kuzelnik
+-- spoji ich na základe ich mena
 GROUP BY kuzelnik.meno
+-- usporiada na základe počtu od najväčšieho po najmenšie
 ORDER BY COUNT(id_historia_grimoar) DESC;
 
+-- vyberie všetky splpce s kuzelnika
 SELECT * FROM kuzelnik
+-- podla zadanej podmienky vyberie tých ktorý nevlastnia ziadny predmet
 WHERE id_kuzelnik NOT IN (SELECT predmet.id_kuzelnik FROM predmet WHERE predmet.id_kuzelnik IS NOT NULL);
