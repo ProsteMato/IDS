@@ -339,12 +339,12 @@ INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
 ------ SELECT s dvoma tabuľkami ----------------
 ------------------------------------------------
 SELECT
-    kuzelnik.meno AS meno_kuzelnika,
-    suboj.id_vyzyvatel AS suboj_vyzyvatel,
-    suboj.id_super AS suboj_super
-FROM kuzelnik
-JOIN suboj ON id_vyzyvatel = kuzelnik.id_kuzelnik OR id_super = kuzelnik.id_kuzelnik
-WHERE meno = 'Hermiona';
+    k1.meno vyzivatel,
+    k2.meno super
+FROM suboj
+INNER JOIN kuzelnik k1 ON id_vyzyvatel = k1.id_kuzelnik
+INNER JOIN kuzelnik k2 ON id_super = k2.id_kuzelnik
+WHERE k1.meno = 'Hermiona' OR k2.meno = 'Hermiona';
 
 ------------------------------------------------
 ----- Vyhľadá všetky kúzla a primárne ----------
@@ -364,12 +364,12 @@ LEFT JOIN element ON kuzlo.id_prim_elementu = element.id_element;
 SELECT
     kuzlo.nazov AS nazov_kuzla,
     element.nazov AS nazov_elementu,
-    zvitok.id_kuzlo AS id_zvitku
+    predmet.nazov AS nazov_predmetu
 FROM kuzlo
 JOIN element ON (kuzlo.id_prim_elementu = element.id_element )
 JOIN zvitok ON (kuzlo.id_kuzlo = zvitok.id_kuzlo)
-WHERE element.nazov='voda';
-
+JOIN predmet ON (predmet.id_predmet = zvitok.id_predmet)
+WHERE element.nazov = 'voda';
 ------------------------------------------------
 ------   Vyhľadá kúzla a vypočíta jeho    ------
 -- priemernú silu a vypíše jeho prim. element --
