@@ -2,9 +2,9 @@
 * @file xkocim05_xondru16.sql
 *
 * @brief IDS project, part 2  - Svet mágie
-*        SQL script for creating basic object of database's scheme 
+*        SQL script for creating basic object of database's scheme
 *
-* @authors Martin Koči          <xkocim05@stud.fit.vutbr.cz> 
+* @authors Martin Koči          <xkocim05@stud.fit.vutbr.cz>
 *          Magdaléna Ondrušková <xondru16@stud.fit.vutbr.cz>
 *
 * @date  16/03/2020
@@ -76,7 +76,7 @@ CREATE TABLE predmet
 (
     id_predmet INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     nazov       VARCHAR(255) NOT NULL,
-    id_kuzelnik INT,
+    id_kuzelnik INT DEFAULT NULL,
     CONSTRAINT id_kuzelnika_FK_P
         FOREIGN KEY(id_kuzelnik)
         REFERENCES kuzelnik(id_kuzelnik)
@@ -121,7 +121,8 @@ CREATE TABLE historia_grimoar
             REFERENCES kuzelnik(id_kuzelnik),
     CONSTRAINT id_grimoar_FK_V_HG
             FOREIGN KEY (id_historia_grimoar)
-            REFERENCES grimoar(id_grimoar)
+            REFERENCES grimoar(id_grimoar),
+    UNIQUE (id_historia_kuzelnik, id_historia_grimoar)
 );
 
 CREATE TABLE kuzlo
@@ -289,7 +290,19 @@ INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
 VALUES (2, 1);
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (2, 2);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (2, 3);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
 VALUES (4, 2);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (4, 1);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (4, 3);
 
 ---------- DATA kuzla v grimoáry -----
 INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
@@ -311,3 +324,16 @@ VALUES (2, 1);
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
 
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
+
+SELECT kuzlo.nazov, element.nazov
+FROM kuzlo
+LEFT JOIN element ON kuzlo.id_prim_elementu = element.id_element;
+
+SELECT kuzelnik.meno, COUNT(id_historia_grimoar)
+FROM historia_grimoar
+LEFT JOIN kuzelnik ON historia_grimoar.id_historia_kuzelnik = kuzelnik.id_kuzelnik
+GROUP BY kuzelnik.meno
+ORDER BY COUNT(id_historia_grimoar) DESC;
+
+SELECT * FROM kuzelnik
+WHERE id_kuzelnik NOT IN (SELECT predmet.id_kuzelnik FROM predmet WHERE predmet.id_kuzelnik IS NOT NULL);

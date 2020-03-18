@@ -76,7 +76,7 @@ CREATE TABLE predmet
 (
     id_predmet INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     nazov       VARCHAR(255) NOT NULL,
-    id_kuzelnik INT,
+    id_kuzelnik INT DEFAULT NULL,
     CONSTRAINT id_kuzelnika_FK_P
         FOREIGN KEY(id_kuzelnik)
         REFERENCES kuzelnik(id_kuzelnik)
@@ -121,7 +121,8 @@ CREATE TABLE historia_grimoar
             REFERENCES kuzelnik(id_kuzelnik),
     CONSTRAINT id_grimoar_FK_V_HG
             FOREIGN KEY (id_historia_grimoar)
-            REFERENCES grimoar(id_grimoar)
+            REFERENCES grimoar(id_grimoar),
+    UNIQUE (id_historia_kuzelnik, id_historia_grimoar)
 );
 
 CREATE TABLE kuzlo
@@ -289,7 +290,19 @@ INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
 VALUES (2, 1);
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (2, 2);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (2, 3);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
 VALUES (4, 2);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (4, 1);
+
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+VALUES (4, 3);
 
 ---------- DATA kuzla v grimoáry -----
 INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
