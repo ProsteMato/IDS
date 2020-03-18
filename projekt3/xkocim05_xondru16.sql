@@ -257,6 +257,9 @@ INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
 VALUES ('Avadagedabra', 10, 'útočné', '5000', 2);
 
 INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
+VALUES ('Avadagedabra', 8, 'útočné', '2000', 2);
+
+INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
 VALUES ('Wingardium Leviosa ', 2, 'obranné', '500', 3);
 
 INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
@@ -325,23 +328,100 @@ INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
 
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
 
--- vyberie všetky názvy kúziel a názvy elementov
-SELECT kuzlo.nazov, element.nazov
+
+-------------------------------------------------
+----------------- 3. PROJEKT --------------------
+-------------------------------------------------
+
+------------------------------------------------
+-- Vyhľadá všetky súboje, v ktorých sa ---------
+--      zúčastnil kúzelnik Hermiona    ---------
+------ SELECT s dvoma tabuľkami ----------------
+------------------------------------------------
+SELECT
+    kuzelnik.meno AS meno_kuzelnika,
+    suboj.id_vyzyvatel AS suboj_vyzyvatel,
+    suboj.id_super AS suboj_super
+FROM kuzelnik
+JOIN suboj ON id_vyzyvatel = kuzelnik.id_kuzelnik OR id_super = kuzelnik.id_kuzelnik
+WHERE meno = 'Hermiona';
+
+------------------------------------------------
+----- Vyhľadá všetky kúzla a primárne ----------
+-----    elementy ktoré obsahujú      ----------
+---------- SELECT s dvoma tabuľkami ------------
+------------------------------------------------
+SELECT kuzlo.nazov AS nazov_kuzla,
+       element.nazov AS nazov_elementu
 FROM kuzlo
--- spoji ich do jednej tabuľky na základe spoločných id elementu
 LEFT JOIN element ON kuzlo.id_prim_elementu = element.id_element;
 
+------------------------------------------------
+------- Vyhľadá všetky zvitky, ktoré -----------
+----- obsahujú  kúzlo s elementom voda  --------
+------    SELECT s tromi tabuľkami    ----------
+------------------------------------------------
+SELECT
+    kuzlo.nazov AS nazov_kuzla,
+    element.nazov AS nazov_elementu,
+    zvitok.id_kuzlo AS id_zvitku
+FROM kuzlo
+JOIN element ON (kuzlo.id_prim_elementu = element.id_element )
+JOIN zvitok ON (kuzlo.id_kuzlo = zvitok.id_kuzlo)
+WHERE element.nazov='voda';
+
+------------------------------------------------
+------   Vyhľadá kúzla a vypočíta jeho    ------
+-- priemernú silu a vypíše jeho prim. element --
+----   GROUP BY s agregačnou funkciou AVG    ---
+----         zoradený od najväčšieho        ----
+------------------------------------------------
+SELECT
+    kuzlo.nazov AS nazov_kuzla,
+    AVG(sila) AS priemerna_sila
+FROM kuzlo
+JOIN element ON kuzlo.id_prim_elementu = element.id_element
+GROUP BY kuzlo.nazov
+HAVING AVG(sila) > 200
+ORDER BY priemerna_sila DESC ;
+
+------------------------------------------------
+------   Vyhľadá kúzelníkov a spočíta     ------
+------     koľko grimoárov vlastnili      ------
+----   GROUP BY s agregačnou funkciou COUNT  ---
+----         zoradený od najväčšieho        ----
+------------------------------------------------
 -- vyberie meno kuzelnika a count pre daného kuzelnika
-SELECT kuzelnik.meno, COUNT(id_historia_grimoar)
+SELECT kuzelnik.meno AS meno_kuzelnika,
+       COUNT(id_historia_grimoar) AS pocet_grimoarov
 FROM historia_grimoar
--- spoji dve tabuľky do jednej za pomoci rovnakého id kuzelnika
 LEFT JOIN kuzelnik ON historia_grimoar.id_historia_kuzelnik = kuzelnik.id_kuzelnik
--- spoji ich na základe ich mena
 GROUP BY kuzelnik.meno
--- usporiada na základe počtu od najväčšieho po najmenšie
 ORDER BY COUNT(id_historia_grimoar) DESC;
 
--- vyberie všetky splpce s kuzelnika
+------------------------------------------------
+------  Vyhľadá všetky elementy, ktoré sú ------
+----  súčasťou vedľajších elementov v kúzle ----
+---------  využitie predikátu EXISTS   ---------
+------------------------------------------------
+SELECT element.nazov AS nazov_elementu
+FROM  element
+WHERE
+    EXISTS
+    (
+        SELECT vedlajsie_elementy_v_kuzle.id_element
+        FROM vedlajsie_elementy_v_kuzle
+        WHERE element.id_element=vedlajsie_elementy_v_kuzle.id_element
+    );
+
+------------------------------------------------
+--------  Vyhľadá všetkých kúzelníkov ----------
+--vypíše tých, ktorý nevlastnia žiadny predmet--
+---------  využitie predikátu IN  ---------
+------------------------------------------------
 SELECT * FROM kuzelnik
--- podla zadanej podmienky vyberie tých ktorý nevlastnia ziadny predmet
-WHERE id_kuzelnik NOT IN (SELECT predmet.id_kuzelnik FROM predmet WHERE predmet.id_kuzelnik IS NOT NULL);
+WHERE id_kuzelnik NOT IN
+      (SELECT predmet.id_kuzelnik
+      FROM predmet
+      WHERE predmet.id_kuzelnik IS NOT NULL);
+
