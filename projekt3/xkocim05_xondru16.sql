@@ -257,13 +257,13 @@ INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
 VALUES ('Avadagedabra', 10, 'útočné', '5000', 2);
 
 INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
-VALUES ('Avadagedabra', 8, 'útočné', '2000', 2);
-
-INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
 VALUES ('Wingardium Leviosa ', 2, 'obranné', '500', 3);
 
 INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
 VALUES ('aqua ', 3, 'útočné', '1000', 1);
+
+INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
+VALUES ('Avadagedabra', 8, 'útočné', '2000', 2);
 
 ----------- DATA zvitok ------
 INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
