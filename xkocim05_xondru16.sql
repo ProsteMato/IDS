@@ -19,6 +19,10 @@ DROP TABLE predmet CASCADE CONSTRAINTS ;
 DROP TABLE grimoar CASCADE CONSTRAINTS ;
 DROP TABLE synergia_element CASCADE CONSTRAINTS ;
 DROP TABLE historia_grimoar CASCADE CONSTRAINTS ;
+DROP TABLE kuzla_v_grimoaroch CASCADE CONSTRAINTS ;
+DROP TABLE kuzlo CASCADE CONSTRAINTS ;
+DROP TABLE vedlajsie_elementy_v_kuzle CASCADE CONSTRAINTS ;
+DROP TABLE zvitok CASCADE CONSTRAINTS ;
 
 ----------- CREATE TABLES -----------
 CREATE TABLE kuzelnik
@@ -50,7 +54,9 @@ CREATE TABLE suboj
 CREATE TABLE element
 (
     id_element INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255) NOT NULL
+    nazov       VARCHAR(255) NOT NULL UNIQUE,
+    barva_magie VARCHAR(255) NOT NULL,
+    specializace VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE miesto_magie
@@ -61,7 +67,7 @@ CREATE TABLE miesto_magie
     suradnica_Z   INT NOT NULL,
     velkost_presakovania INT  DEFAULT 1 CHECK (velkost_presakovania>0),
     id_miesto_element   INT NOT NULL,
-    CONSTRAINT id_miesto_element_FK
+    CONSTRAINT id_miesto_element_FK_MM
             FOREIGN KEY (id_miesto_element)
             REFERENCES element(id_element)
 );
@@ -69,7 +75,11 @@ CREATE TABLE miesto_magie
 CREATE TABLE predmet
 (
     id_predmet INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255) NOT NULL
+    nazov       VARCHAR(255) NOT NULL,
+    id_kuzelnik INT,
+    CONSTRAINT id_kuzelnika_FK_P
+        FOREIGN KEY(id_kuzelnik)
+        REFERENCES kuzelnik(id_kuzelnik)
 );
 
 CREATE TABLE grimoar
@@ -78,22 +88,26 @@ CREATE TABLE grimoar
     magia       VARCHAR(50)    NOT NULL,
     id_grimoar_predmet  INT            NOT NULL,
     id_grimoar_element  INT            NOT NULL,
-    CONSTRAINT id_predmet_FK
+    id_vlastni          INT,
+    CONSTRAINT id_predmet_FK_G
             FOREIGN KEY (id_grimoar_predmet)
             REFERENCES predmet(id_predmet),
-    CONSTRAINT id_prim_element_FK
+    CONSTRAINT id_prim_element_FK_G
             FOREIGN KEY (id_grimoar_element)
-            REFERENCES element(id_element)
+            REFERENCES element(id_element),
+    CONSTRAINT id_vlastni_FK_G
+        FOREIGN KEY (id_vlastni)
+        REFERENCES kuzelnik(id_kuzelnik)
 );
 
 CREATE TABLE synergia_element
 (
     id_synergia_element    INT    NOT NULL,
     id_synergia_kuzelnik   INT    NOT NULL,
-    CONSTRAINT id_synergia_element_FK
+    CONSTRAINT id_synergia_element_FK_V_SE
             FOREIGN KEY (id_synergia_element)
             REFERENCES element(id_element),
-    CONSTRAINT id_synergia_kuzelnik_FK
+    CONSTRAINT id_synergia_kuzelnik_FK_V_SE
             FOREIGN KEY (id_synergia_kuzelnik)
             REFERENCES kuzelnik(id_kuzelnik)
 );
@@ -102,13 +116,59 @@ CREATE TABLE historia_grimoar
 (
     id_historia_kuzelnik     INT    NOT NULL,
     id_historia_grimoar      INT    NOT NULL,
-    CONSTRAINT id_majitel_FK
+    CONSTRAINT id_majitel_FK_V_HG
             FOREIGN KEY (id_historia_kuzelnik)
             REFERENCES kuzelnik(id_kuzelnik),
-    CONSTRAINT id_grimoar_FK
+    CONSTRAINT id_grimoar_FK_V_HG
             FOREIGN KEY (id_historia_grimoar)
             REFERENCES grimoar(id_grimoar)
 );
+
+CREATE TABLE kuzlo
+(
+    id_kuzlo INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    nazov VARCHAR(255) NOT NULL,
+    obtiaznost_zoslania INT NOT NULL CHECK ( obtiaznost_zoslania >= 0 ),
+    typ VARCHAR(255) NOT NULL,
+    sila INT NOT NULL CHECK ( sila >= 0 ),
+    id_prim_elementu INT NOT NULL,
+    CONSTRAINT id_prime_element_FK_V_K
+        FOREIGN KEY (id_prim_elementu)
+        REFERENCES element(id_element)
+);
+
+CREATE TABLE kuzla_v_grimoaroch
+(
+    id INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    id_grimoar NOT NULL,
+    id_kuzlo NOT NULL,
+    CONSTRAINT id_grimoar_FK_V_KVG
+            FOREIGN KEY (id_grimoar)
+            REFERENCES grimoar(id_grimoar),
+    CONSTRAINT id_kuzlo_FK_V_KVG
+            FOREIGN KEY (id_kuzlo)
+            REFERENCES kuzlo(id_kuzlo)
+);
+
+CREATE TABLE zvitok
+(
+    id_zvitok INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    pouzity INT CHECK ( pouzity = 0 OR  pouzity = 1),
+    id_predmet INT NOT NULL,
+    id_kuzlo INT NOT NULL,
+    CONSTRAINT id_predmet_FK_V_ZVITOK FOREIGN KEY (id_predmet) REFERENCES predmet(id_predmet),
+    CONSTRAINT id_kuzlo_FK_V_ZVITOK FOREIGN KEY (id_kuzlo) REFERENCES kuzlo(id_kuzlo)
+);
+
+CREATE TABLE vedlajsie_elementy_v_kuzle
+(
+    id_element INT NOT NULL,
+    id_kuzlo INT NOT NULL,
+    CONSTRAINT id_element_FK_V_VEK FOREIGN KEY (id_element) REFERENCES element(id_element),
+    CONSTRAINT id_kuzlo_FK_V_VEK FOREIGN KEY (id_kuzlo) REFERENCES kuzlo(id_kuzlo)
+);
+
+
 
 
 ---------------------------
@@ -142,11 +202,15 @@ VALUES ('SUBOJ_02', 2,4,4);
 INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
 VALUES ('SUBOJ_03', 4,5,4);
 
-INSERT INTO element(nazov)
-VALUES ('voda');
+---------- DATA element -----
+INSERT INTO element(nazov, barva_magie, specializace)
+VALUES ('voda', 'modrá', 'podpora');
 
-INSERT INTO element(nazov)
-VALUES ('ohen');
+INSERT INTO element(nazov, barva_magie, specializace)
+VALUES ('ohen', 'červená', 'útok');
+
+INSERT INTO element(nazov, barva_magie, specializace)
+VALUES ('vzduch', 'biela', 'obrana');
 
 ---------- DATA miesto magie -----
 INSERT INTO miesto_magie( suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
@@ -158,17 +222,54 @@ VALUES (1289, 42, 1987, 44, 2);
 INSERT INTO miesto_magie(suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
 VALUES (74982,12785,-1745,1,1);
 
+---------- DATA predmet -----
 INSERT INTO predmet(nazov)
 VALUES ('GRIM01');
 
 INSERT INTO predmet(nazov)
 VALUES ('GRIM02');
+
+INSERT INTO predmet(nazov, id_kuzelnik)
+VALUES ('GRIM03', 3);
+
+INSERT INTO predmet(nazov, id_kuzelnik)
+VALUES ('Zvitok1', 4);
+
+INSERT INTO predmet(nazov, id_kuzelnik)
+VALUES ('Zvitok2', 5);
+
+INSERT INTO predmet(nazov, id_kuzelnik)
+VALUES ('Smrť ťa čaká čoskoro', 3);
+
 ----------- DATA grimoar ------
 INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
 VALUES ('voda', 1, 1);
 
 INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
-VALUES ('vzduch', 2,1);
+VALUES ('vzduch', 2, 3);
+
+INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
+VALUES ('oheň', 3, 2);
+
+---------- DATA kuzlo -----
+INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
+VALUES ('Avadagedabra', 10, 'útočné', '5000', 2);
+
+INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
+VALUES ('Wingardium Leviosa ', 2, 'obranné', '500', 3);
+
+INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
+VALUES ('aqua ', 3, 'útočné', '1000', 1);
+
+----------- DATA zvitok ------
+INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
+VALUES (0, 4, 2);
+
+INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
+VALUES (0, 6, 1);
+
+INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
+VALUES (1, 5, 3);
 
 ---------- DATA synergia element ----
 INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
@@ -189,3 +290,24 @@ VALUES (2, 1);
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
 VALUES (4, 2);
+
+---------- DATA kuzla v grimoáry -----
+INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+VALUES (1, 1);
+
+INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+VALUES (1, 2);
+
+INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+VALUES (1, 3);
+
+INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+VALUES (1, 2);
+
+INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+VALUES (2, 1);
+
+---------- DATA vedlajsie elementy v kuzle -----
+INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
+
+INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
