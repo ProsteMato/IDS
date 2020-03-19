@@ -28,7 +28,7 @@ DROP SEQUENCE kuzelnik_sequence;
 ----------- CREATE TABLES -----------
 CREATE TABLE kuzelnik
 (
-    id_kuzelnik INT            NOT NULL  PRIMARY KEY, -- increasing using trigger
+    id_kuzelnik INT           PRIMARY KEY, -- increasing using trigger
     meno        VARCHAR(255)  NOT NULL,
     mana        INT           NOT NULL CHECK ( mana >= 0 ),
     uroven      VARCHAR(255)  NOT NULL
