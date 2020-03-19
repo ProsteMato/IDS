@@ -7,7 +7,7 @@
 * @authors Martin Koči          <xkocim05@stud.fit.vutbr.cz> 
 *          Magdaléna Ondrušková <xondru16@stud.fit.vutbr.cz>
 *
-* @date  16/03/2020
+* @date  19/03/2020
 */
 
 ----------- DELETE existing TABLES ------
@@ -27,7 +27,7 @@ DROP TABLE zvitok CASCADE CONSTRAINTS ;
 ----------- CREATE TABLES -----------
 CREATE TABLE kuzelnik
 (
-    id_kuzelnik INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
+    id_kuzelnik INT            NOT NULL  PRIMARY KEY, -- increasing using trigger
     meno        VARCHAR(255)  NOT NULL,
     mana        INT           NOT NULL CHECK ( mana >= 0 ),
     uroven      VARCHAR(255)  NOT NULL
@@ -168,6 +168,20 @@ CREATE TABLE vedlajsie_elementy_v_kuzle
     CONSTRAINT id_kuzlo_FK_V_VEK FOREIGN KEY (id_kuzlo) REFERENCES kuzlo(id_kuzlo)
 );
 
+------------------------------------------
+--- Automatické generovanie hodnôt PK ----
+---        pre tabuľku kuznik          ---
+-----------   TRIGGER 1     --------------
+CREATE SEQUENCE kuzelnik_sequence
+    START WITH 1
+    INCREMENT BY 1;
+CREATE OR REPLACE TRIGGER kuzelnik_gen_id
+    BEFORE INSERT ON kuzelnik
+    FOR EACH ROW
+    BEGIN
+        :NEW.id_kuzelnik := kuzelnik_sequence.nextval;
+    END;
+/
 
 
 
@@ -311,3 +325,31 @@ VALUES (2, 1);
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
 
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
+
+
+-----------------------------------------------
+------ Predvedenie funkcie triggerov ----------
+-----------------------------------------------
+SELECT * from kuzelnik;
+INSERT INTO kuzelnik(meno, mana, uroven)
+VALUES ('Ron Weasley', 158, 'S');
+SELECT * from kuzelnik;
+
+
+------------------------------------------------
+---  Definícia prístupových práv pre druhého ---
+---          člena týmu: xkocim05            ---
+------------------------------------------------
+GRANT ALL ON kuzelnik to xkocim05;
+GRANT ALL ON suboj to xkocim05;
+GRANT ALL ON element to xkocim05;
+GRANT ALL ON miesto_magie to xkocim05;
+GRANT ALL ON predmet to xkocim05;
+GRANT ALL ON grimoar to xkocim05;
+GRANT ALL ON zvitok to xkocim05;
+GRANT ALL ON historia_grimoar to xkocim05;
+GRANT ALL ON synergia_element to xkocim05;
+GRANT ALL ON kuzla_v_grimoaroch to xkocim05;
+GRANT ALL ON vedlajsie_elementy_v_kuzle to xkocim05;
+GRANT ALL ON kuzlo to xkocim05;
+
