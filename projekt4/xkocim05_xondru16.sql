@@ -23,6 +23,7 @@ DROP TABLE kuzla_v_grimoaroch CASCADE CONSTRAINTS ;
 DROP TABLE kuzlo CASCADE CONSTRAINTS ;
 DROP TABLE vedlajsie_elementy_v_kuzle CASCADE CONSTRAINTS ;
 DROP TABLE zvitok CASCADE CONSTRAINTS ;
+DROP SEQUENCE kuzelnik_sequence;
 
 ----------- CREATE TABLES -----------
 CREATE TABLE kuzelnik
@@ -88,7 +89,7 @@ CREATE TABLE grimoar
     magia       VARCHAR(50)    NOT NULL,
     id_grimoar_predmet  INT            NOT NULL,
     id_grimoar_element  INT            NOT NULL,
-    id_vlastni          INT,
+    id_vlastni          INT            DEFAULT NULL,
     CONSTRAINT id_predmet_FK_G
             FOREIGN KEY (id_grimoar_predmet)
             REFERENCES predmet(id_predmet),
@@ -121,7 +122,8 @@ CREATE TABLE historia_grimoar
             REFERENCES kuzelnik(id_kuzelnik),
     CONSTRAINT id_grimoar_FK_V_HG
             FOREIGN KEY (id_historia_grimoar)
-            REFERENCES grimoar(id_grimoar)
+            REFERENCES grimoar(id_grimoar),
+    UNIQUE (id_historia_grimoar, id_historia_kuzelnik)
 );
 
 CREATE TABLE kuzlo
@@ -183,6 +185,20 @@ CREATE OR REPLACE TRIGGER kuzelnik_gen_id
     END;
 /
 
+CREATE OR REPLACE TRIGGER grimoar_history
+    AFTER INSERT OR UPDATE ON grimoar
+    FOR EACH ROW
+    BEGIN
+        IF :NEW.id_vlastni IS NOT NULL
+        THEN
+            INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
+            VALUES (:NEW.id_vlastni, :NEW.id_grimoar);
+        END IF;
+    EXCEPTION
+        WHEN others then
+            dbms_output.put_line('Some error message you can build here or up above');
+    END;
+/
 
 
 ---------------------------
@@ -256,14 +272,25 @@ INSERT INTO predmet(nazov, id_kuzelnik)
 VALUES ('Smrť ťa čaká čoskoro', 3);
 
 ----------- DATA grimoar ------
-INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
-VALUES ('voda', 1, 1);
+INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element, id_vlastni)
+VALUES ('voda', 1, 1, 1);
 
-INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
-VALUES ('vzduch', 2, 3);
+INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element, id_vlastni)
+VALUES ('vzduch', 2, 3, 5);
+
+INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element, id_vlastni)
+VALUES ('oheň', 3, 2, 4);
 
 INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
 VALUES ('oheň', 3, 2);
+
+UPDATE grimoar
+SET id_vlastni = 4
+WHERE id_grimoar = 3;
+
+UPDATE grimoar
+SET id_vlastni = 4
+WHERE id_grimoar = 1;
 
 ---------- DATA kuzlo -----
 INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
@@ -295,16 +322,6 @@ VALUES (1,1);
 INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
 VALUES (2, 2);
 
------------ DATA historia grimoar ---
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (1,1);
-
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 1);
-
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 2);
-
 ---------- DATA kuzla v grimoáry -----
 INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
 VALUES (1, 1);
@@ -334,6 +351,8 @@ SELECT * from kuzelnik;
 INSERT INTO kuzelnik(meno, mana, uroven)
 VALUES ('Ron Weasley', 158, 'S');
 SELECT * from kuzelnik;
+
+SELECT * from historia_grimoar;
 
 
 ------------------------------------------------
