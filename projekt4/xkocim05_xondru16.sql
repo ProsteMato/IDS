@@ -275,6 +275,48 @@ BEGIN
             DBMS_OUTPUT.PUT_LINE('Some other error.');
 END;
 /
+
+
+------------------------------------------------------------------------
+------- Procedúra na ziskanie počtu jednotlivch kúziel v grimoáry ------
+-------            použitie kurzosu spolu s výnimkami             ------
+------------------------------------------------------------------------
+CREATE OR REPLACE PROCEDURE kuzla_v_grimoare (id_grimoaru IN INT) AS
+    CURSOR kuzla_v_grim IS SELECT id_kuzlo from kuzla_v_grimoaroch where id_grimoar = id_grimoaru;
+    TYPE count_kuzlo IS TABLE OF NUMBER INDEX BY VARCHAR2(255);
+    kuzlo_id kuzla_v_grimoaroch.id_kuzlo%TYPE;
+    count_kuziel count_kuzlo := count_kuzlo();
+    grimoar_name VARCHAR2(255);
+    nazov_kuzla VARCHAR2(255);
+BEGIN
+    SELECT predmet.nazov INTO grimoar_name FROM predmet
+    JOIN grimoar ON grimoar.id_grimoar_predmet = predmet.id_predmet
+    WHERE grimoar.id_grimoar = id_grimoaru;
+    OPEN kuzla_v_grim;
+    LOOP
+        FETCH kuzla_v_grim into kuzlo_id;
+        EXIT WHEN kuzla_v_grim%notfound;
+        SELECT kuzlo.nazov into nazov_kuzla from kuzlo where id_kuzlo = kuzlo_id;
+        if (count_kuziel.EXISTS (nazov_kuzla)) then
+            count_kuziel(nazov_kuzla) := count_kuziel(nazov_kuzla) + 1;
+        else
+            count_kuziel(nazov_kuzla) := 1;
+        end if;
+    END LOOP;
+
+    DBMS_OUTPUT.PUT_LINE('Grimoár s id: ' || id_grimoaru || ' s nazvom: ' || grimoar_name || ' obsahuje kúzlá');
+    nazov_kuzla := count_kuziel.FIRST;
+    WHILE nazov_kuzla IS NOT NULL LOOP
+        DBMS_OUTPUT.PUT_LINE(count_kuziel(nazov_kuzla) || 'x ' || nazov_kuzla);
+        nazov_kuzla := count_kuziel.NEXT(nazov_kuzla);
+    END LOOP;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Grimoár s id: ' || id_grimoaru || ' neexistuje!');
+END;
+
+
 ---------------------------
 ----------- DATA ----------
 ---------------------------
@@ -437,6 +479,15 @@ SELECT * from suboj;
 -------------------------------------------------
 BEGIN
     win_rate('Hermiona');
+END;
+
+
+-----------------------------------------------------
+-----      Príklad zavolania procedúry         ------
+-----   kuzla_v_grimoare pre grimoar s id '1'  ------
+-----------------------------------------------------
+BEGIN
+    kuzla_v_grimoare(1);
 END;
 
 ------------------------------------------------
