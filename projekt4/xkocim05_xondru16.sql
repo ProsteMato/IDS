@@ -174,6 +174,7 @@ CREATE TABLE vedlajsie_elementy_v_kuzle
 --- Automatické generovanie hodnôt PK ----
 ---        pre tabuľku kuznik          ---
 -----------   TRIGGER 1     --------------
+------------------------------------------
 CREATE SEQUENCE kuzelnik_sequence
     START WITH 1
     INCREMENT BY 1;
@@ -185,6 +186,11 @@ CREATE OR REPLACE TRIGGER kuzelnik_gen_id
     END;
 /
 
+------------------------------------------
+----  Trigger na ukladanie histórie  -----
+----           grimoárov             -----
+-----------   TRIGGER 2     --------------
+------------------------------------------
 CREATE OR REPLACE TRIGGER grimoar_history
     AFTER INSERT OR UPDATE ON grimoar
     FOR EACH ROW
@@ -199,8 +205,64 @@ CREATE OR REPLACE TRIGGER grimoar_history
             dbms_output.put_line('Some error message you can build here or up above');
     END;
 /
+------------------------------------------------
+------- Procedúra na vypočítanie win-rate ------
+------- kúzelníka, spolu s ošetrením chýb ------
+------------------------------------------------
+CREATE OR REPLACE PROCEDURE win_rate (kuzelnik_meno IN VARCHAR ) AS
+    CURSOR suboj_kuzelnik IS SELECT id_vyzyvatel,id_super,id_vitaz FROM suboj;
+    pocet_subojov INT;
+    pocet_vyhier INT;
+    win_rate_kuzelnik NUMBER;
+    kuzelnik_id kuzelnik.id_kuzelnik%TYPE;
+    vyzyvatel_id suboj.id_vyzyvatel%TYPE;
+    super_id suboj.id_super%TYPE;
+    suboj_vitaz suboj.id_vitaz%TYPE;
+BEGIN
+    pocet_subojov :=0;
+    pocet_vyhier :=0;
 
+    -- ziskanie ID kúzelníka, ktorého win-rate rátame --
+    SELECT id_kuzelnik into kuzelnik_id
+    FROM kuzelnik
+    WHERE kuzelnik_meno = meno;
 
+    OPEN suboj_kuzelnik;
+    LOOP
+        FETCH suboj_kuzelnik INTO  vyzyvatel_id, super_id, suboj_vitaz;
+        EXIT WHEN suboj_kuzelnik%NOTFOUND;  -- ukončujúca podmienka cyklu --
+
+        -- spočíta počet súbojov v ktorých sa kúzelník zúčastnil --
+        IF vyzyvatel_id = kuzelnik_id OR super_id = kuzelnik_id THEN
+            pocet_subojov := pocet_subojov +1;
+        END IF ;
+
+        -- spočíta počet súbojov, ktoré kúzelník vyhral
+        IF suboj_vitaz = kuzelnik_id THEN
+            pocet_vyhier := pocet_vyhier +1;
+        END IF;
+    END LOOP;
+    CLOSE suboj_kuzelnik;
+
+    IF pocet_subojov = 0 then
+        RAISE NO_DATA_FOUND;
+    end if;
+
+    if pocet_vyhier = 0 then
+        win_rate_kuzelnik := 0;
+         DBMS_OUTPUT.PUT_LINE('Kúzeník ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik) || '%.' );
+    else
+        win_rate_kuzelnik := pocet_vyhier / pocet_subojov * 100;
+        DBMS_OUTPUT.PUT_LINE('Kúzeník ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik, '999.99') || '%.' );
+    end if;
+
+     EXCEPTION
+        WHEN NO_DATA_FOUND THEN
+            DBMS_OUTPUT.PUT_LINE('Žiadny súboj s daným kúzelníkom neexistuje.');
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE('Some other error.');
+END;
+/
 ---------------------------
 ----------- DATA ----------
 ---------------------------
@@ -231,6 +293,9 @@ VALUES ('SUBOJ_02', 2,4,4);
 
 INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
 VALUES ('SUBOJ_03', 4,5,4);
+
+INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
+VALUES ('SUBOJ_04',2,4,2);
 
 ---------- DATA element -----
 INSERT INTO element(nazov, barva_magie, specializace)
@@ -353,7 +418,14 @@ VALUES ('Ron Weasley', 158, 'S');
 SELECT * from kuzelnik;
 
 SELECT * from historia_grimoar;
-
+SELECT * from suboj;
+-------------------------------------------------
+-----      Príklad zavolania procedúry     ------
+-----   win-rate pre kúzelníka 'Hermiona'  ------
+-------------------------------------------------
+BEGIN
+    win_rate('Hermiona');
+END;
 
 ------------------------------------------------
 ---  Definícia prístupových práv pre druhého ---
@@ -371,3 +443,5 @@ GRANT ALL ON synergia_element to xkocim05;
 GRANT ALL ON kuzla_v_grimoaroch to xkocim05;
 GRANT ALL ON vedlajsie_elementy_v_kuzle to xkocim05;
 GRANT ALL ON kuzlo to xkocim05;
+
+GRANT  EXECUTE ON win_rate to xkocim05;
