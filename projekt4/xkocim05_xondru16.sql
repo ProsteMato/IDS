@@ -213,14 +213,26 @@ CREATE OR REPLACE PROCEDURE win_rate (kuzelnik_meno IN VARCHAR ) AS
     CURSOR suboj_kuzelnik IS SELECT id_vyzyvatel,id_super,id_vitaz FROM suboj;
     pocet_subojov INT;
     pocet_vyhier INT;
+    pocet_kuzelnikov INT;
     win_rate_kuzelnik NUMBER;
-    kuzelnik_id kuzelnik.id_kuzelnik%TYPE;
+   -- TYPE kuzelnik_id_table IS TABLE OF kuzelnik.id_kuzelnik%TYPE ;
+   -- kuzelnik_id kuzelnik_id_table;
+    kuzelnik_id INT;
     vyzyvatel_id suboj.id_vyzyvatel%TYPE;
     super_id suboj.id_super%TYPE;
     suboj_vitaz suboj.id_vitaz%TYPE;
 BEGIN
     pocet_subojov :=0;
     pocet_vyhier :=0;
+
+    SELECT COUNT(id_kuzelnik) into pocet_kuzelnikov
+    FROM kuzelnik
+    WHERE kuzelnik_meno = meno;
+
+    if pocet_kuzelnikov != 1 then
+        DBMS_OUTPUT.PUT_LINE('Viac kúzelníkov s rovnakým menom!  ' || TO_CHAR(pocet_kuzelnikov));
+    end if;
+
 
     -- ziskanie ID kúzelníka, ktorého win-rate rátame --
     SELECT id_kuzelnik into kuzelnik_id
