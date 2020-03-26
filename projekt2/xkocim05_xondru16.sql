@@ -38,8 +38,8 @@ CREATE TABLE suboj
     id_suboj    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
     nazov       VARCHAR(255)  NOT NULL,
     id_vyzyvatel INT NOT NULL,
-    id_super     INT NOT NULL,
-    id_vitaz     INT NOT NULL,
+    id_super     INT DEFAULT NULL,
+    id_vitaz     INT DEFAULT NULL,
     CONSTRAINT  id_vyzyvatel_FK
             FOREIGN KEY (id_vyzyvatel)
             REFERENCES kuzelnik(id_kuzelnik),
