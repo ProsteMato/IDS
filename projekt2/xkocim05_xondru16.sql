@@ -96,7 +96,6 @@ CREATE TABLE active_grimoar
 CREATE TABLE history_battles
 (
     id_battle    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
-    name       VARCHAR(255)  NOT NULL,
     login_challenger VARCHAR(255) NOT NULL,
     login_opponent     VARCHAR(255) DEFAULT NULL,
     login_winner     VARCHAR(255) DEFAULT NULL,
@@ -196,19 +195,14 @@ INSERT INTO magician(login, password, name, mana, level_magic)
 VALUES ('GinyWeasley', 'tooManyBr0thers','Giny', 1021, 'B');
 
 ---------- DATA history of battles -------
-INSERT INTO history_battles(name, login_challenger, login_opponent, login_winner)
-VALUES ('BATTLE_01', 'Dumbo12', 'Harry19', 'Dumbo12');
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Dumbo12', 'Harry19', 'Dumbo12');
 
-INSERT INTO history_battles(name, login_challenger, login_opponent, login_winner)
-VALUES ('BATTLE_02', 'Harry19', 'Hermiona99', 'Hermiona99');
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Harry19', 'Hermiona99', 'Hermiona99');
 
-INSERT INTO history_battles(name, login_challenger, login_opponent, login_winner)
-VALUES ('BATTLE_03', 'Hermiona99', 'GinyWeasley', 'Hermiona99');
-
-INSERT INTO history_battles(name, login_challenger, login_opponent, login_winner, date_battle)
-VALUES ('BATTLE_03', 'Hermiona99', 'GinyWeasley', 'Hermiona99', TO_DATE( '2020-03-01 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ));
-
-SELECT * FROM history_battles;
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Hermiona99', 'GinyWeasley', 'Hermiona99');
 
 ---------- DATA element -----
 INSERT INTO element(name, color_of_magic, specialization)
@@ -328,6 +322,3 @@ VALUES (2, 1);
 INSERT INTO side_elements_spell(id_element, id_spell) VALUES (3, 1);
 
 INSERT INTO side_elements_spell(id_element, id_spell) VALUES (1, 3);
-
-SELECT * from magician;
-SELECT * from history_grimoar;
