@@ -27,28 +27,33 @@ DROP TABLE zvitok CASCADE CONSTRAINTS ;
 ----------- CREATE TABLES -----------
 CREATE TABLE kuzelnik
 (
-    id_kuzelnik INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
+    login       VARCHAR(255)  NOT NULL  PRIMARY KEY,
+    heslo       VARCHAR(255)  NOT NULL CHECK(REGEXP_LIKE(heslo, '.*[A-Z]+.*[0-9]+.*')),
     meno        VARCHAR(255)  NOT NULL,
     mana        INT           NOT NULL CHECK ( mana >= 0 ),
-    uroven      VARCHAR(255)  NOT NULL
+    uroven      VARCHAR(255)  NOT NULL,
+    aktivny_grimoar INT  DEFAULT null,
+    CONSTRAINT id_aktivny_grimoar_FK
+            FOREIGN KEY (aktivny_grimoar)
+            REFERENCES predmet(id_predmet)
 );
 
 CREATE TABLE suboj
 (
     id_suboj    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
     nazov       VARCHAR(255)  NOT NULL,
-    id_vyzyvatel INT NOT NULL,
-    id_super     INT DEFAULT NULL,
-    id_vitaz     INT DEFAULT NULL,
+    id_vyzyvatel VARCHAR(255) NOT NULL,
+    id_super     VARCHAR(255) DEFAULT NULL,
+    id_vitaz     VARCHAR(255) DEFAULT NULL,
     CONSTRAINT  id_vyzyvatel_FK
             FOREIGN KEY (id_vyzyvatel)
-            REFERENCES kuzelnik(id_kuzelnik),
+            REFERENCES kuzelnik(login),
     CONSTRAINT  id_super_FK
             FOREIGN KEY (id_super)
-            REFERENCES  kuzelnik(id_kuzelnik),
+            REFERENCES  kuzelnik(login),
     CONSTRAINT  id_vitaz_FK
             FOREIGN KEY (id_vitaz)
-            REFERENCES kuzelnik(id_kuzelnik)
+            REFERENCES kuzelnik(login)
 );
 
 CREATE TABLE element
@@ -103,18 +108,18 @@ CREATE TABLE grimoar
 CREATE TABLE synergia_element
 (
     id_synergia_element    INT    NOT NULL,
-    id_synergia_kuzelnik   INT    NOT NULL,
+    id_synergia_kuzelnik   VARCHAR(255)    NOT NULL,
     CONSTRAINT id_synergia_element_FK_V_SE
             FOREIGN KEY (id_synergia_element)
             REFERENCES element(id_element),
     CONSTRAINT id_synergia_kuzelnik_FK_V_SE
             FOREIGN KEY (id_synergia_kuzelnik)
-            REFERENCES kuzelnik(id_kuzelnik)
+            REFERENCES kuzelnik(login)
 );
 
 CREATE TABLE historia_grimoar
 (
-    id_historia_kuzelnik     INT    NOT NULL,
+    id_historia_kuzelnik     VARCHAR(255)    NOT NULL,
     id_historia_grimoar      INT    NOT NULL,
     started_owning_date      VARCHAR(255) NOT NULL CHECK(REGEXP_LIKE(started_owning_date, '([0-2][0-9]|3[0-1])(.)(0[0-9]|1[0-2])(.)[0-9]{4}')),
     started_owning_time      VARCHAR(255) NOT NULL CHECK(REGEXP_LIKE(started_owning_time, '^(([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)[0-9]{2})$')),
@@ -122,7 +127,7 @@ CREATE TABLE historia_grimoar
     stopped_owning_time      VARCHAR(255) DEFAULT NULL CHECK(REGEXP_LIKE(stopped_owning_time, '(([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)[0-9]{2})$')),
     CONSTRAINT id_majitel_FK_V_HG
             FOREIGN KEY (id_historia_kuzelnik)
-            REFERENCES kuzelnik(id_kuzelnik),
+            REFERENCES kuzelnik(login),
     CONSTRAINT id_grimoar_FK_V_HG
             FOREIGN KEY (id_historia_grimoar)
             REFERENCES grimoar(id_grimoar),
@@ -182,30 +187,30 @@ CREATE TABLE vedlajsie_elementy_v_kuzle
 --- SQL index from 1 ------
 
 -------- DATA kuzelnik -------
-INSERT INTO kuzelnik(meno,mana,uroven)
-VALUES ('Dumbledore',2001, 'S');
+INSERT INTO kuzelnik(login,heslo,meno,mana,uroven,aktivny_grimoar)
+VALUES ('Dumbo12','HateVoldemort23','Dumbledore',2001, 'S', 1);
 
-INSERT INTO kuzelnik(meno,mana,uroven)
-VALUES ('HarryPotter', 1560, 'A');
+INSERT INTO kuzelnik(login, heslo, meno,mana,uroven, aktivny_grimoar)
+VALUES ('Harry19', 'heSlo123','HarryPotter', 1560, 'A',2);
 
-INSERT INTO kuzelnik(meno,mana,uroven)
-VALUES ('Voldemort', 1580, 'SS');
+INSERT INTO kuzelnik(login, heslo, meno,mana,uroven)
+VALUES ('Voldi14', 'morT1sDeA1h','Voldemort', 1580, 'SS');
 
-INSERT INTO kuzelnik(meno, mana,uroven)
-VALUES ('Hermiona', 1600,  'D');
+INSERT INTO kuzelnik(login, heslo,meno, mana,uroven, aktivny_grimoar)
+VALUES ('Hermiona99', 'lovesB00ks','Hermiona', 1600,  'D', 2);
 
-INSERT INTO kuzelnik(meno, mana, uroven)
-VALUES ('Giny', 1021, 'B');
+INSERT INTO kuzelnik(login, heslo, meno, mana, uroven)
+VALUES ('GinyWeasley', 'tooManyBr0thers','Giny', 1021, 'B');
 
 ---------- DATA suboj -------
 INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
-VALUES ('SUBOJ_01', 1,3,1);
+VALUES ('SUBOJ_01', 'Dumbo12','Harry19','Dumbo12');
 
 INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
-VALUES ('SUBOJ_02', 2,4,4);
+VALUES ('SUBOJ_02', 'Harry19', 'Hermiona99', 'Hermiona99');
 
 INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
-VALUES ('SUBOJ_03', 4,5,4);
+VALUES ('SUBOJ_03', 'Hermiona99', 'GinyWeasley', 'Hermiona99');
 
 ---------- DATA element -----
 INSERT INTO element(nazov, barva_magie, specializace)
@@ -235,16 +240,16 @@ INSERT INTO predmet(nazov)
 VALUES ('GRIM02');
 
 INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('GRIM03', 3);
+VALUES ('GRIM03', 'Voldi14');
 
 INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('Zvitok1', 4);
+VALUES ('Zvitok1', 'Hermiona99');
 
 INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('Zvitok2', 5);
+VALUES ('Zvitok2', 'GinyWeasley');
 
 INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('Smrť ťa čaká čoskoro', 3);
+VALUES ('Smrť ťa čaká čoskoro', 'Voldi14');
 
 ----------- DATA grimoar ------
 INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
@@ -278,35 +283,35 @@ VALUES (1, 5, 3);
 
 ---------- DATA synergia element ----
 INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
-VALUES (1,4);
+VALUES (1,'Hermiona99');
 
 INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
-VALUES (1,1);
+VALUES (1,'Dumbo12');
 
 INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
-VALUES (2, 2);
+VALUES (2, 'Harry19');
 
 ----------- DATA historia grimoar ---
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
-VALUES (1,1, '25.03.2020', '15:15:00', '27.03.2020', '03:00:14');
+VALUES ('Dumbo12',1, '25.03.2020', '15:15:00', '27.03.2020', '03:00:14');
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
-VALUES (2, 1, '27.03.2020', '18:10:26', '28.03.2020', '14:17:00');
+VALUES ('Harry19', 1, '27.03.2020', '18:10:26', '28.03.2020', '14:17:00');
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
-VALUES (2, 2, '10.02.2020', '17:59:25', '15.02.2020', '10:10:10');
+VALUES ('Harry19', 2, '10.02.2020', '17:59:25', '15.02.2020', '10:10:10');
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
-VALUES (2, 3, '01.02.2020', '02:06:08', '10.02.2020', '12:12:12');
+VALUES ('Harry19', 3, '01.02.2020', '02:06:08', '10.02.2020', '12:12:12');
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time)
-VALUES (4, 2, '20.02.2020','14:14:58');
+VALUES ('Hermiona99', 2, '20.02.2020','14:14:58');
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time)
-VALUES (4, 1, '29.03.2020', '00:00:00' );
+VALUES ('Hermiona99', 1, '29.03.2020', '00:00:00' );
 
 INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
-VALUES (4, 3, '15.02.2020', '15:45:58', '28.02.2020', '18:25:67');
+VALUES ('Hermiona99', 3, '15.02.2020', '15:45:58', '28.02.2020', '18:25:67');
 
 ---------- DATA kuzla v grimoáry -----
 INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
