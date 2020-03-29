@@ -38,8 +38,8 @@ CREATE TABLE suboj
     id_suboj    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
     nazov       VARCHAR(255)  NOT NULL,
     id_vyzyvatel INT NOT NULL,
-    id_super     INT NOT NULL,
-    id_vitaz     INT NOT NULL,
+    id_super     INT DEFAULT NULL,
+    id_vitaz     INT DEFAULT NULL,
     CONSTRAINT  id_vyzyvatel_FK
             FOREIGN KEY (id_vyzyvatel)
             REFERENCES kuzelnik(id_kuzelnik),
@@ -116,6 +116,10 @@ CREATE TABLE historia_grimoar
 (
     id_historia_kuzelnik     INT    NOT NULL,
     id_historia_grimoar      INT    NOT NULL,
+    started_owning_date      VARCHAR(255) NOT NULL CHECK(REGEXP_LIKE(started_owning_date, '([0-2][0-9]|3[0-1])(.)(0[0-9]|1[0-2])(.)[0-9]{4}')),
+    started_owning_time      VARCHAR(255) NOT NULL CHECK(REGEXP_LIKE(started_owning_time, '^(([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)[0-9]{2})$')),
+    stopped_owning_date      VARCHAR(255) DEFAULT NULL CHECK(REGEXP_LIKE(stopped_owning_date, '([0-2][0-9]|3[0-1])(.)(0[0-9]|1[0-2])(.)[0-9]{4}')),
+    stopped_owning_time      VARCHAR(255) DEFAULT NULL CHECK(REGEXP_LIKE(stopped_owning_time, '(([0-1][0-9]|2[0-3])(:)([0-5][0-9])(:)[0-9]{2})$')),
     CONSTRAINT id_majitel_FK_V_HG
             FOREIGN KEY (id_historia_kuzelnik)
             REFERENCES kuzelnik(id_kuzelnik),
@@ -283,26 +287,26 @@ INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
 VALUES (2, 2);
 
 ----------- DATA historia grimoar ---
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (1,1);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
+VALUES (1,1, '25.03.2020', '15:15:00', '27.03.2020', '03:00:14');
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 1);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
+VALUES (2, 1, '27.03.2020', '18:10:26', '28.03.2020', '14:17:00');
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 2);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
+VALUES (2, 2, '10.02.2020', '17:59:25', '15.02.2020', '10:10:10');
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 3);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
+VALUES (2, 3, '01.02.2020', '02:06:08', '10.02.2020', '12:12:12');
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 2);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time)
+VALUES (4, 2, '20.02.2020','14:14:58');
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 1);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time)
+VALUES (4, 1, '29.03.2020', '00:00:00' );
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 3);
+INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar,started_owning_date,started_owning_time,stopped_owning_date,stopped_owning_time)
+VALUES (4, 3, '15.02.2020', '15:45:58', '28.02.2020', '18:25:67');
 
 ---------- DATA kuzla v grimoáry -----
 INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
@@ -324,3 +328,7 @@ VALUES (2, 1);
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
 
 INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
+
+SELECT * from kuzelnik;
+SELECT * from suboj;
+SELECT * from historia_grimoar;
