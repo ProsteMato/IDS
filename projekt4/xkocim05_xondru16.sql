@@ -209,64 +209,52 @@ CREATE OR REPLACE TRIGGER grimoar_history
 ------- Procedúra na vypočítanie win-rate ------
 ------- kúzelníka, spolu s ošetrením chýb ------
 ------------------------------------------------
-CREATE OR REPLACE PROCEDURE win_rate (kuzelnik_meno IN VARCHAR ) AS
-    CURSOR suboj_kuzelnik IS SELECT id_vyzyvatel,id_super,id_vitaz FROM suboj;
-    pocet_subojov INT;
-    pocet_vyhier INT;
-    pocet_kuzelnikov INT;
+CREATE OR REPLACE PROCEDURE win_rate (kuzelnik_meno IN VARCHAR ) IS
+    CURSOR suboj_kuzelnik IS SELECT * FROM suboj;
+    CURSOR kuzelnici IS SELECT id_kuzelnik FROM kuzelnik WHERE kuzelnik_meno = meno;
+    TYPE suboj_pocet IS TABLE OF NUMBER INDEX BY VARCHAR2(255);
+    pocet_subojov suboj_pocet := suboj_pocet();
+    pocet_vyhier suboj_pocet := suboj_pocet();
     win_rate_kuzelnik NUMBER;
-   -- TYPE kuzelnik_id_table IS TABLE OF kuzelnik.id_kuzelnik%TYPE ;
-   -- kuzelnik_id kuzelnik_id_table;
-    kuzelnik_id INT;
-    vyzyvatel_id suboj.id_vyzyvatel%TYPE;
-    super_id suboj.id_super%TYPE;
-    suboj_vitaz suboj.id_vitaz%TYPE;
+    suboj_row suboj%rowtype;
 BEGIN
-    pocet_subojov :=0;
-    pocet_vyhier :=0;
-
-    SELECT COUNT(id_kuzelnik) into pocet_kuzelnikov
-    FROM kuzelnik
-    WHERE kuzelnik_meno = meno;
-
-    if pocet_kuzelnikov != 1 then
-        DBMS_OUTPUT.PUT_LINE('Viac kúzelníkov s rovnakým menom!  ' || TO_CHAR(pocet_kuzelnikov));
-    end if;
-
-
-    -- ziskanie ID kúzelníka, ktorého win-rate rátame --
-    SELECT id_kuzelnik into kuzelnik_id
-    FROM kuzelnik
-    WHERE kuzelnik_meno = meno;
+    FOR kuzelnik in kuzelnici LOOP
+        pocet_subojov(kuzelnik.id_kuzelnik) := 0;
+        pocet_vyhier(kuzelnik.id_kuzelnik) := 0;
+    end loop;
 
     OPEN suboj_kuzelnik;
     LOOP
-        FETCH suboj_kuzelnik INTO  vyzyvatel_id, super_id, suboj_vitaz;
-        EXIT WHEN suboj_kuzelnik%NOTFOUND;  -- ukončujúca podmienka cyklu --
-
-        -- spočíta počet súbojov v ktorých sa kúzelník zúčastnil --
-        IF vyzyvatel_id = kuzelnik_id OR super_id = kuzelnik_id THEN
-            pocet_subojov := pocet_subojov +1;
-        END IF ;
-
-        -- spočíta počet súbojov, ktoré kúzelník vyhral
-        IF suboj_vitaz = kuzelnik_id THEN
-            pocet_vyhier := pocet_vyhier +1;
+        FETCH suboj_kuzelnik INTO suboj_row;
+        EXIT WHEN suboj_kuzelnik%NOTFOUND;
+        FOR kuzelnik in kuzelnici LOOP
+        --spočíta počet súbojov v ktorých sa kúzelník zúčastnil --
+        IF suboj_row.id_vyzyvatel = kuzelnik.id_kuzelnik OR suboj_row.id_super = kuzelnik.id_kuzelnik THEN
+           pocet_subojov(kuzelnik.id_kuzelnik) := pocet_subojov(kuzelnik.id_kuzelnik) + 1;
         END IF;
+
+        --spočíta počet súbojov, ktoré kúzelník vyhral
+        IF suboj_row.id_vitaz = kuzelnik.id_kuzelnik THEN
+           pocet_vyhier(kuzelnik.id_kuzelnik) := pocet_vyhier(kuzelnik.id_kuzelnik) + 1;
+        END If;
+        end loop;
     END LOOP;
     CLOSE suboj_kuzelnik;
 
-    IF pocet_subojov = 0 then
-        RAISE NO_DATA_FOUND;
-    end if;
+    for kuzelnik in kuzelnici LOOP
+        IF pocet_subojov(kuzelnik.id_kuzelnik) = 0 then
+            DBMS_OUTPUT.PUT_LINE('Kuzelnik s id ' || kuzelnik.id_kuzelnik || ' a s menom ' || kuzelnik_meno || ' nehrál žiadny súboj!');
+            CONTINUE;
+        end if;
 
-    if pocet_vyhier = 0 then
-        win_rate_kuzelnik := 0;
-         DBMS_OUTPUT.PUT_LINE('Kúzeník ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik) || '%.' );
-    else
-        win_rate_kuzelnik := pocet_vyhier / pocet_subojov * 100;
-        DBMS_OUTPUT.PUT_LINE('Kúzeník ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik, '999.99') || '%.' );
-    end if;
+        if pocet_vyhier(kuzelnik.id_kuzelnik) = 0 then
+            win_rate_kuzelnik := 0;
+            DBMS_OUTPUT.PUT_LINE('Kúzelník ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik) || '%.' );
+        else
+            win_rate_kuzelnik := pocet_vyhier(kuzelnik.id_kuzelnik) / pocet_subojov(kuzelnik.id_kuzelnik) * 100;
+            DBMS_OUTPUT.PUT_LINE('Kúzelník s id '|| kuzelnik.id_kuzelnik || ' a s menom ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik, '999.99') || '%.' );
+        end if;
+    end loop;
 
      EXCEPTION
         WHEN NO_DATA_FOUND THEN
@@ -334,6 +322,9 @@ VALUES ('Voldemort', 1580, 'SS');
 
 INSERT INTO kuzelnik(meno, mana,uroven)
 VALUES ('Hermiona', 1600,  'D');
+
+INSERT INTO kuzelnik(meno, mana,uroven)
+VALUES ('Hermiona', 2500,  'SS');
 
 INSERT INTO kuzelnik(meno, mana, uroven)
 VALUES ('Giny', 1021, 'B');
