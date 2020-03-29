@@ -13,6 +13,7 @@
 ----------- DELETE existing TABLES ------
 DROP TABLE kuzelnik CASCADE CONSTRAINTS ;
 DROP TABLE suboj CASCADE CONSTRAINTS ;
+DROP TABLE historia_subojov CASCADE CONSTRAINTS ;
 DROP TABLE element CASCADE CONSTRAINTS ;
 DROP TABLE miesto_magie CASCADE CONSTRAINTS ;
 DROP TABLE predmet CASCADE CONSTRAINTS ;
@@ -20,8 +21,8 @@ DROP TABLE grimoar CASCADE CONSTRAINTS ;
 DROP TABLE synergia_element CASCADE CONSTRAINTS ;
 DROP TABLE historia_grimoar CASCADE CONSTRAINTS ;
 DROP TABLE kuzla_v_grimoaroch CASCADE CONSTRAINTS ;
-DROP TABLE kuzlo CASCADE CONSTRAINTS ;
 DROP TABLE vedlajsie_elementy_v_kuzle CASCADE CONSTRAINTS ;
+DROP TABLE kuzlo CASCADE CONSTRAINTS ;
 DROP TABLE zvitok CASCADE CONSTRAINTS ;
 
 ----------- CREATE TABLES -----------
@@ -33,13 +34,13 @@ CREATE TABLE kuzelnik
     uroven      VARCHAR(255)  NOT NULL
 );
 
-CREATE TABLE suboj
+CREATE TABLE historia_subojov
 (
     id_suboj    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255)  NOT NULL,
     id_vyzyvatel INT NOT NULL,
     id_super     INT NOT NULL,
     id_vitaz     INT NOT NULL,
+    datum        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT  id_vyzyvatel_FK
             FOREIGN KEY (id_vyzyvatel)
             REFERENCES kuzelnik(id_kuzelnik),
@@ -75,29 +76,22 @@ CREATE TABLE miesto_magie
 CREATE TABLE predmet
 (
     id_predmet INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255) NOT NULL,
     id_kuzelnik INT DEFAULT NULL,
+    nazov       VARCHAR(255) NOT NULL,
+    type        VARCHAR(255) NOT NULL CHECK ( type = 'grimoar' or type = 'zvitok' ),
+    magia_grimoaru INT CHECK ( type = 'grimoar' and magia_grimoaru >= 0 ),
+    id_grimoar_element INT CHECK ( id_grimoar_element is not NULL and type = 'grimoar'),
+    id_kuzlo_zvitku INT CHECK ( id_kuzlo_zvitku is not NULL and type = 'zvitok'  ),
+
+    CONSTRAINT id_kuzlo_FK_V_ZVITOK
+        FOREIGN KEY (id_kuzlo_zvitku)
+        REFERENCES kuzlo(id_kuzlo),
     CONSTRAINT id_kuzelnika_FK_P
         FOREIGN KEY(id_kuzelnik)
-        REFERENCES kuzelnik(id_kuzelnik)
-);
-
-CREATE TABLE grimoar
-(
-    id_grimoar  INT            GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    magia       VARCHAR(50)    NOT NULL,
-    id_grimoar_predmet  INT            NOT NULL,
-    id_grimoar_element  INT            NOT NULL,
-    id_vlastni          INT,
-    CONSTRAINT id_predmet_FK_G
-            FOREIGN KEY (id_grimoar_predmet)
-            REFERENCES predmet(id_predmet),
+        REFERENCES kuzelnik(id_kuzelnik),
     CONSTRAINT id_prim_element_FK_G
             FOREIGN KEY (id_grimoar_element)
-            REFERENCES element(id_element),
-    CONSTRAINT id_vlastni_FK_G
-        FOREIGN KEY (id_vlastni)
-        REFERENCES kuzelnik(id_kuzelnik)
+            REFERENCES element(id_element)
 );
 
 CREATE TABLE synergia_element
@@ -149,16 +143,6 @@ CREATE TABLE kuzla_v_grimoaroch
     CONSTRAINT id_kuzlo_FK_V_KVG
             FOREIGN KEY (id_kuzlo)
             REFERENCES kuzlo(id_kuzlo)
-);
-
-CREATE TABLE zvitok
-(
-    id_zvitok INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    pouzity INT CHECK ( pouzity = 0 OR  pouzity = 1),
-    id_predmet INT NOT NULL,
-    id_kuzlo INT NOT NULL,
-    CONSTRAINT id_predmet_FK_V_ZVITOK FOREIGN KEY (id_predmet) REFERENCES predmet(id_predmet),
-    CONSTRAINT id_kuzlo_FK_V_ZVITOK FOREIGN KEY (id_kuzlo) REFERENCES kuzlo(id_kuzlo)
 );
 
 CREATE TABLE vedlajsie_elementy_v_kuzle
