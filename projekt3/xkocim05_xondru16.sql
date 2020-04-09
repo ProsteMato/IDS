@@ -11,165 +11,166 @@
 */
 
 ----------- DELETE existing TABLES ------
-DROP TABLE kuzelnik CASCADE CONSTRAINTS ;
-DROP TABLE suboj CASCADE CONSTRAINTS ;
+DROP TABLE magician CASCADE CONSTRAINTS ;
+DROP TABLE history_battles CASCADE CONSTRAINTS ;
 DROP TABLE element CASCADE CONSTRAINTS ;
-DROP TABLE miesto_magie CASCADE CONSTRAINTS ;
-DROP TABLE predmet CASCADE CONSTRAINTS ;
-DROP TABLE grimoar CASCADE CONSTRAINTS ;
-DROP TABLE synergia_element CASCADE CONSTRAINTS ;
-DROP TABLE historia_grimoar CASCADE CONSTRAINTS ;
-DROP TABLE kuzla_v_grimoaroch CASCADE CONSTRAINTS ;
-DROP TABLE kuzlo CASCADE CONSTRAINTS ;
-DROP TABLE vedlajsie_elementy_v_kuzle CASCADE CONSTRAINTS ;
-DROP TABLE zvitok CASCADE CONSTRAINTS ;
+DROP TABLE magical_place CASCADE CONSTRAINTS ;
+DROP TABLE item CASCADE CONSTRAINTS ;
+DROP TABLE synergy_element CASCADE CONSTRAINTS ;
+DROP TABLE history_grimoar CASCADE CONSTRAINTS ;
+DROP TABLE spells_grimoar CASCADE CONSTRAINTS ;
+DROP TABLE spell CASCADE CONSTRAINTS ;
+DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
+DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
 
 ----------- CREATE TABLES -----------
-CREATE TABLE kuzelnik
-(
-    id_kuzelnik INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
-    meno        VARCHAR(255)  NOT NULL,
-    mana        INT           NOT NULL CHECK ( mana >= 0 ),
-    uroven      VARCHAR(255)  NOT NULL
-);
-
-CREATE TABLE suboj
-(
-    id_suboj    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255)  NOT NULL,
-    id_vyzyvatel INT NOT NULL,
-    id_super     INT NOT NULL,
-    id_vitaz     INT NOT NULL,
-    CONSTRAINT  id_vyzyvatel_FK
-            FOREIGN KEY (id_vyzyvatel)
-            REFERENCES kuzelnik(id_kuzelnik),
-    CONSTRAINT  id_super_FK
-            FOREIGN KEY (id_super)
-            REFERENCES  kuzelnik(id_kuzelnik),
-    CONSTRAINT  id_vitaz_FK
-            FOREIGN KEY (id_vitaz)
-            REFERENCES kuzelnik(id_kuzelnik)
-);
 
 CREATE TABLE element
 (
     id_element INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255) NOT NULL UNIQUE,
-    barva_magie VARCHAR(255) NOT NULL,
-    specializace VARCHAR(255) NOT NULL
+    name       VARCHAR(255) NOT NULL UNIQUE,
+    color_of_magic VARCHAR(255) NOT NULL,
+    specialization VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE miesto_magie
+CREATE TABLE spell
 (
-    id_miesto   INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
-    suradnica_X   INT NOT NULL CHECK ( suradnica_X>=0 ),
-    suradnica_Y   INT NOT NULL CHECK (  suradnica_Y>=0 ),
-    suradnica_Z   INT NOT NULL,
-    velkost_presakovania INT  DEFAULT 1 CHECK (velkost_presakovania>0),
-    id_miesto_element   INT NOT NULL,
-    CONSTRAINT id_miesto_element_FK_MM
-            FOREIGN KEY (id_miesto_element)
-            REFERENCES element(id_element)
-);
-
-CREATE TABLE predmet
-(
-    id_predmet INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    nazov       VARCHAR(255) NOT NULL,
-    id_kuzelnik INT DEFAULT NULL,
-    CONSTRAINT id_kuzelnika_FK_P
-        FOREIGN KEY(id_kuzelnik)
-        REFERENCES kuzelnik(id_kuzelnik)
-);
-
-CREATE TABLE grimoar
-(
-    id_grimoar  INT            GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    magia       VARCHAR(50)    NOT NULL,
-    id_grimoar_predmet  INT            NOT NULL,
-    id_grimoar_element  INT            NOT NULL,
-    id_vlastni          INT,
-    CONSTRAINT id_predmet_FK_G
-            FOREIGN KEY (id_grimoar_predmet)
-            REFERENCES predmet(id_predmet),
-    CONSTRAINT id_prim_element_FK_G
-            FOREIGN KEY (id_grimoar_element)
-            REFERENCES element(id_element),
-    CONSTRAINT id_vlastni_FK_G
-        FOREIGN KEY (id_vlastni)
-        REFERENCES kuzelnik(id_kuzelnik)
-);
-
-CREATE TABLE synergia_element
-(
-    id_synergia_element    INT    NOT NULL,
-    id_synergia_kuzelnik   INT    NOT NULL,
-    CONSTRAINT id_synergia_element_FK_V_SE
-            FOREIGN KEY (id_synergia_element)
-            REFERENCES element(id_element),
-    CONSTRAINT id_synergia_kuzelnik_FK_V_SE
-            FOREIGN KEY (id_synergia_kuzelnik)
-            REFERENCES kuzelnik(id_kuzelnik)
-);
-
-CREATE TABLE historia_grimoar
-(
-    id_historia_kuzelnik     INT    NOT NULL,
-    id_historia_grimoar      INT    NOT NULL,
-    CONSTRAINT id_majitel_FK_V_HG
-            FOREIGN KEY (id_historia_kuzelnik)
-            REFERENCES kuzelnik(id_kuzelnik),
-    CONSTRAINT id_grimoar_FK_V_HG
-            FOREIGN KEY (id_historia_grimoar)
-            REFERENCES grimoar(id_grimoar),
-    UNIQUE (id_historia_kuzelnik, id_historia_grimoar)
-);
-
-CREATE TABLE kuzlo
-(
-    id_kuzlo INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    nazov VARCHAR(255) NOT NULL,
-    obtiaznost_zoslania INT NOT NULL CHECK ( obtiaznost_zoslania >= 0 ),
-    typ VARCHAR(255) NOT NULL,
-    sila INT NOT NULL CHECK ( sila >= 0 ),
-    id_prim_elementu INT NOT NULL,
-    CONSTRAINT id_prime_element_FK_V_K
-        FOREIGN KEY (id_prim_elementu)
+    id_spell INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    hardness_of_casting INT NOT NULL CHECK ( hardness_of_casting >= 0 ),
+    type VARCHAR(255) NOT NULL,
+    strength INT NOT NULL CHECK ( strength >= 0 ),
+    id_prim_element INT NOT NULL,
+    CONSTRAINT id_prime_element_FK_S
+        FOREIGN KEY (id_prim_element)
         REFERENCES element(id_element)
 );
 
-CREATE TABLE kuzla_v_grimoaroch
+CREATE TABLE magician
+(
+    login       VARCHAR(255)  NOT NULL  PRIMARY KEY,
+    password       VARCHAR(255)  NOT NULL CHECK(REGEXP_LIKE(password, '.*[A-Z]+.*[0-9]+.*')),
+    name        VARCHAR(255)  NOT NULL,
+    mana        INT           NOT NULL CHECK ( mana >= 0 ),
+    level_magic      VARCHAR(255)  NOT NULL
+);
+
+CREATE TABLE item
+(
+    id_item INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    login_magician VARCHAR(255) DEFAULT NULL,
+    name       VARCHAR(255) NOT NULL,
+    type        VARCHAR(255) NOT NULL CHECK ( type = 'grimoar' or type = 'scroll' ),
+    magic_grimoar INT,
+    id_grimoar_element INT,
+    id_spell_scroll INT,
+
+    CHECK (
+        (type = 'grimoar' and magic_grimoar >= 0 and id_grimoar_element is not NULL) or
+        (type = 'scroll' and id_spell_scroll is not NULL)
+    ),
+
+    CONSTRAINT id_spell_FK_SCROLL
+        FOREIGN KEY (id_spell_scroll)
+        REFERENCES spell(id_spell),
+    CONSTRAINT login_magician_FK_I
+        FOREIGN KEY(login_magician)
+        REFERENCES magician(login),
+    CONSTRAINT id_prim_element_FK_I
+        FOREIGN KEY (id_grimoar_element)
+        REFERENCES element(id_element)
+);
+
+CREATE TABLE active_grimoar
+(
+    login_magician           VARCHAR(255) NOT NULL,
+    active_grimoar INT  DEFAULT NULL,
+    CONSTRAINT id_active_grimoar_FK
+            FOREIGN KEY (active_grimoar)
+            REFERENCES item(id_item),
+    CONSTRAINT login_magician_FK_AG
+        FOREIGN KEY(login_magician)
+        REFERENCES magician(login)
+);
+
+CREATE TABLE history_battles
+(
+    id_battle    INT           GENERATED ALWAYS AS IDENTITY  NOT NULL PRIMARY KEY,
+    login_challenger VARCHAR(255) NOT NULL,
+    login_opponent     VARCHAR(255) DEFAULT NULL,
+    login_winner     VARCHAR(255) DEFAULT NULL,
+    date_battle        DATE DEFAULT CURRENT_DATE,
+    CONSTRAINT  login_challenger_FK
+            FOREIGN KEY (login_challenger)
+            REFERENCES magician(login),
+    CONSTRAINT  login_opponent_FK
+            FOREIGN KEY (login_opponent)
+            REFERENCES  magician(login),
+    CONSTRAINT  login_winner_FK
+            FOREIGN KEY (login_winner)
+            REFERENCES magician(login)
+);
+
+CREATE TABLE magical_place
+(
+    id_place   INT           GENERATED ALWAYS AS IDENTITY NOT NULL  PRIMARY KEY,
+    coordinate_X   INT NOT NULL CHECK ( coordinate_X>=0 ),
+    coordinate_Y   INT NOT NULL CHECK (  coordinate_Y>=0 ),
+    coordinate_Z   INT NOT NULL,
+    size_leaking INT  DEFAULT 1 CHECK (size_leaking>0),
+    id_place_element   INT NOT NULL,
+    CONSTRAINT id_place_element_FK_MP
+            FOREIGN KEY (id_place_element)
+            REFERENCES element(id_element)
+);
+
+CREATE TABLE synergy_element
+(
+    id_synergy_element    INT    NOT NULL,
+    login_synergy_magician  VARCHAR(255)    NOT NULL,
+    CONSTRAINT id_synergy_element_FK_SE
+            FOREIGN KEY (id_synergy_element)
+            REFERENCES element(id_element),
+    CONSTRAINT login_synergy_magician_FK_SE
+            FOREIGN KEY (login_synergy_magician)
+            REFERENCES magician(login)
+);
+
+CREATE TABLE history_grimoar
+(
+    login_history_magician     VARCHAR(255)    NOT NULL,
+    id_history_grimoar      INT    NOT NULL,
+    started_owning_date      DATE NOT NULL,
+    stopped_owning_date      DATE DEFAULT NULL,
+    CONSTRAINT login_owner_FK_HG
+            FOREIGN KEY (login_history_magician)
+            REFERENCES magician(login),
+    CONSTRAINT id_grimoar_FK_HG
+            FOREIGN KEY (id_history_grimoar)
+            REFERENCES item(id_item),
+    UNIQUE (login_history_magician, id_history_grimoar)
+);
+
+CREATE TABLE spells_grimoar
 (
     id INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     id_grimoar NOT NULL,
-    id_kuzlo NOT NULL,
-    CONSTRAINT id_grimoar_FK_V_KVG
+    id_spell NOT NULL,
+    CONSTRAINT id_grimoar_FK_SG
             FOREIGN KEY (id_grimoar)
-            REFERENCES grimoar(id_grimoar),
-    CONSTRAINT id_kuzlo_FK_V_KVG
-            FOREIGN KEY (id_kuzlo)
-            REFERENCES kuzlo(id_kuzlo)
+            REFERENCES item(id_item),
+    CONSTRAINT id_spell_FK_SG
+            FOREIGN KEY (id_spell)
+            REFERENCES spell(id_spell)
 );
 
-CREATE TABLE zvitok
-(
-    id_zvitok INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    pouzity INT CHECK ( pouzity = 0 OR  pouzity = 1),
-    id_predmet INT NOT NULL,
-    id_kuzlo INT NOT NULL,
-    CONSTRAINT id_predmet_FK_V_ZVITOK FOREIGN KEY (id_predmet) REFERENCES predmet(id_predmet),
-    CONSTRAINT id_kuzlo_FK_V_ZVITOK FOREIGN KEY (id_kuzlo) REFERENCES kuzlo(id_kuzlo)
-);
-
-CREATE TABLE vedlajsie_elementy_v_kuzle
+CREATE TABLE side_elements_spell
 (
     id_element INT NOT NULL,
-    id_kuzlo INT NOT NULL,
-    CONSTRAINT id_element_FK_V_VEK FOREIGN KEY (id_element) REFERENCES element(id_element),
-    CONSTRAINT id_kuzlo_FK_V_VEK FOREIGN KEY (id_kuzlo) REFERENCES kuzlo(id_kuzlo)
+    id_spell INT NOT NULL,
+    CONSTRAINT id_element_FK_SES FOREIGN KEY (id_element) REFERENCES element(id_element),
+    CONSTRAINT id_spell_FK_IN_SES FOREIGN KEY (id_spell) REFERENCES spell(id_spell)
 );
-
-
 
 
 ---------------------------
@@ -177,156 +178,150 @@ CREATE TABLE vedlajsie_elementy_v_kuzle
 ---------------------------
 --- SQL index from 1 ------
 
--------- DATA kuzelnik -------
-INSERT INTO kuzelnik(meno,mana,uroven)
-VALUES ('Dumbledore',2001, 'S');
+-------- DATA magician -------
+INSERT INTO magician(login, password, name, mana, level_magic)
+VALUES ('Dumbo12','HateVoldemort23','Dumbledore',2001, 'S');
 
-INSERT INTO kuzelnik(meno,mana,uroven)
-VALUES ('HarryPotter', 1560, 'A');
+INSERT INTO magician(login, password, name, mana, level_magic)
+VALUES ('Harry19', 'heSlo123','HarryPotter', 1560, 'A');
 
-INSERT INTO kuzelnik(meno,mana,uroven)
-VALUES ('Voldemort', 1580, 'SS');
+INSERT INTO magician(login, password, name, mana, level_magic)
+VALUES ('Voldi14', 'morT1sDeA1h','Voldemort', 1580, 'SS');
 
-INSERT INTO kuzelnik(meno, mana,uroven)
-VALUES ('Hermiona', 1600,  'D');
+INSERT INTO magician(login, password, name, mana, level_magic)
+VALUES ('Hermiona99', 'lovesB00ks','Hermiona', 1600,  'D');
 
-INSERT INTO kuzelnik(meno, mana, uroven)
-VALUES ('Giny', 1021, 'B');
+INSERT INTO magician(login, password, name, mana, level_magic)
+VALUES ('GinyWeasley', 'tooManyBr0thers','Giny', 1021, 'B');
 
----------- DATA suboj -------
-INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
-VALUES ('SUBOJ_01', 1,3,1);
+---------- DATA history of battles -------
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Dumbo12', 'Harry19', 'Dumbo12');
 
-INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
-VALUES ('SUBOJ_02', 2,4,4);
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Harry19', 'Hermiona99', 'Hermiona99');
 
-INSERT INTO suboj(nazov, id_vyzyvatel, id_super, id_vitaz)
-VALUES ('SUBOJ_03', 4,5,4);
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Hermiona99', 'GinyWeasley', 'Hermiona99');
 
 ---------- DATA element -----
-INSERT INTO element(nazov, barva_magie, specializace)
-VALUES ('voda', 'modrá', 'podpora');
+INSERT INTO element(name, color_of_magic, specialization)
+VALUES ('water', 'blue', 'support');
 
-INSERT INTO element(nazov, barva_magie, specializace)
-VALUES ('ohen', 'červená', 'útok');
+INSERT INTO element(name, color_of_magic, specialization)
+VALUES ('fire', 'red', 'attack');
 
-INSERT INTO element(nazov, barva_magie, specializace)
-VALUES ('vzduch', 'biela', 'obrana');
+INSERT INTO element(name, color_of_magic, specialization)
+VALUES ('air', 'white', 'defence');
 
----------- DATA miesto magie -----
-INSERT INTO miesto_magie( suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
-VALUES (12, 189,-18, 10, 1);
+---------- DATA place of magic -----
+INSERT INTO magical_place(coordinate_X, coordinate_Y, coordinate_Z, size_leaking, id_place_element)
+VALUES (12, 189, -18, 10, 1);
 
-INSERT INTO miesto_magie(suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
+INSERT INTO magical_place(coordinate_X, coordinate_Y, coordinate_Z, size_leaking, id_place_element)
 VALUES (1289, 42, 1987, 44, 2);
 
-INSERT INTO miesto_magie(suradnica_x, suradnica_y, suradnica_z, velkost_presakovania, id_miesto_element)
-VALUES (74982,12785,-1745,1,1);
+INSERT INTO magical_place(coordinate_X, coordinate_Y, coordinate_Z, size_leaking, id_place_element)
+VALUES (74982, 12785, -1745, 1, 1);
 
----------- DATA predmet -----
-INSERT INTO predmet(nazov)
-VALUES ('GRIM01');
+---------- DATA spell -----
+INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
+VALUES ('Avadagedabra', 10, 'attack', '5000', 2);
 
-INSERT INTO predmet(nazov)
-VALUES ('GRIM02');
+INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
+VALUES ('Wingardium Leviosa ', 2, 'defence', '500', 3);
 
-INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('GRIM03', 3);
+INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
+VALUES ('aqua ', 3, 'attack', '1000', 1);
 
-INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('Zvitok1', 4);
+---------- DATA item -----
+INSERT INTO item(name, type, magic_grimoar, id_grimoar_element)
+VALUES ('GRIM01', 'grimoar', 40, 1);
 
-INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('Zvitok2', 5);
+INSERT INTO item(name, type, magic_grimoar, id_grimoar_element)
+VALUES ('GRIM02', 'grimoar', 50, 2);
 
-INSERT INTO predmet(nazov, id_kuzelnik)
-VALUES ('Smrť ťa čaká čoskoro', 3);
+INSERT INTO item(name, login_magician,type, magic_grimoar, id_grimoar_element)
+VALUES ('GRIM03', 'Voldi14', 'grimoar', 100, 3);
 
------------ DATA grimoar ------
-INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
-VALUES ('voda', 1, 1);
+INSERT INTO item(name, login_magician, type, id_spell_scroll)
+VALUES ('Scroll1', 'Hermiona99', 'scroll', 1);
 
-INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
-VALUES ('vzduch', 2, 3);
+INSERT INTO item(name, login_magician, type, id_spell_scroll)
+VALUES ('Scroll2', 'GinyWeasley', 'scroll', 2);
 
-INSERT INTO grimoar(magia, id_grimoar_predmet, id_grimoar_element)
-VALUES ('oheň', 3, 2);
+INSERT INTO item(name, login_magician, type, id_spell_scroll)
+VALUES ('Death waits for you', 'Voldi14', 'scroll', 3);
 
----------- DATA kuzlo -----
-INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
-VALUES ('Avadagedabra', 10, 'útočné', '5000', 2);
+---------- DATA active grimoars -----
 
-INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
-VALUES ('Wingardium Leviosa ', 2, 'obranné', '500', 3);
+INSERT INTO active_grimoar(login_magician)
+VALUES ('Voldi14');
 
-INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
-VALUES ('aqua ', 3, 'útočné', '1000', 1);
+INSERT INTO active_grimoar(login_magician)
+VALUES ('Harry19');
 
-INSERT INTO kuzlo(nazov, obtiaznost_zoslania, typ, sila, id_prim_elementu)
-VALUES ('Avadagedabra', 8, 'útočné', '2000', 2);
+INSERT INTO active_grimoar(login_magician)
+VALUES ('Dumbo12');
 
------------ DATA zvitok ------
-INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
-VALUES (0, 4, 2);
+INSERT INTO active_grimoar(login_magician)
+VALUES ('GinyWeasley');
 
-INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
-VALUES (0, 6, 1);
+INSERT INTO active_grimoar(login_magician, active_grimoar)
+VALUES ('Hermiona99', 2);
 
-INSERT INTO zvitok(pouzity, id_predmet, id_kuzlo)
-VALUES (1, 5, 3);
+---------- DATA synergy element ----
+INSERT INTO synergy_element(id_synergy_element, login_synergy_magician)
+VALUES (1,'Hermiona99');
 
----------- DATA synergia element ----
-INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
-VALUES (1,4);
+INSERT INTO synergy_element(id_synergy_element, login_synergy_magician)
+VALUES (1,'Dumbo12');
 
-INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
-VALUES (1,1);
+INSERT INTO synergy_element(id_synergy_element, login_synergy_magician)
+VALUES (2, 'Harry19');
 
-INSERT INTO synergia_element(id_synergia_element, id_synergia_kuzelnik)
-VALUES (2, 2);
+----------- DATA history grimoar ---
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+VALUES ('Dumbo12',1, TO_DATE( '2020-03-01 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE( '2020-03-27 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ));
 
------------ DATA historia grimoar ---
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (1,1);
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+VALUES ('Harry19', 1, TO_DATE ('2020-03-27 18:10:26', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-03-28 14:17:00', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 1);
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+VALUES ('Harry19', 2, TO_DATE ('2020-02-10 17:59:25', 'YYYY-MM-DD HH24:MI:SS' ),TO_DATE ('2020-02-15 10:10:10', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 2);
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+VALUES ('Harry19', 3, TO_DATE ('2020-02-01 02:06:08', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-10 12:12:12', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (2, 3);
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date)
+VALUES ('Hermiona99', 2, TO_DATE ('2020-02-20 14:14:58', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 2);
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date)
+VALUES ('Hermiona99', 1, TO_DATE ('2020-03-29 00:00:00' , 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 1);
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+VALUES ('Hermiona99', 3, TO_DATE ('2020-02-15 15:45:58', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-23 18:25:48', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-VALUES (4, 3);
-
----------- DATA kuzla v grimoáry -----
-INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+---------- DATA spells in grimoar -----
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
 VALUES (1, 1);
 
-INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
 VALUES (1, 2);
 
-INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
-VALUES (1, 3);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (3, 3);
 
-INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
-VALUES (1, 2);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (2, 2);
 
-INSERT INTO kuzla_v_grimoaroch(id_grimoar, id_kuzlo)
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
 VALUES (2, 1);
 
----------- DATA vedlajsie elementy v kuzle -----
-INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (3, 1);
+---------- DATA side elements in spell -----
+INSERT INTO side_elements_spell(id_element, id_spell) VALUES (3, 1);
 
-INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
+INSERT INTO side_elements_spell(id_element, id_spell) VALUES (1, 3);
 
 
 -------------------------------------------------
@@ -339,22 +334,22 @@ INSERT INTO vedlajsie_elementy_v_kuzle(id_element, id_kuzlo) VALUES (1, 3);
 ------ SELECT s dvoma tabuľkami ----------------
 ------------------------------------------------
 SELECT
-    k1.meno vyzivatel,
-    k2.meno super
-FROM suboj
-INNER JOIN kuzelnik k1 ON id_vyzyvatel = k1.id_kuzelnik
-INNER JOIN kuzelnik k2 ON id_super = k2.id_kuzelnik
-WHERE k1.meno = 'Hermiona' OR k2.meno = 'Hermiona';
+    k1.name vyzivatel,
+    k2.name super
+FROM history_battles
+INNER JOIN magician k1 ON login_challenger = k1.login
+INNER JOIN magician k2 ON login_opponent = k2.login
+WHERE k1.name = 'Hermiona' OR k2.name = 'Hermiona';
 
 ------------------------------------------------
 ----- Vyhľadá všetky kúzla a primárne ----------
 -----    elementy ktoré obsahujú      ----------
 ---------- SELECT s dvoma tabuľkami ------------
 ------------------------------------------------
-SELECT kuzlo.nazov AS nazov_kuzla,
-       element.nazov AS nazov_elementu
-FROM kuzlo
-LEFT JOIN element ON kuzlo.id_prim_elementu = element.id_element;
+SELECT spell.name AS nazov_kuzla,
+       element.name AS nazov_elementu
+FROM spell
+LEFT JOIN element ON spell.id_prim_element = element.id_element;
 
 ------------------------------------------------
 ------- Vyhľadá všetky zvitky, ktoré -----------
@@ -362,14 +357,16 @@ LEFT JOIN element ON kuzlo.id_prim_elementu = element.id_element;
 ------    SELECT s tromi tabuľkami    ----------
 ------------------------------------------------
 SELECT
-    kuzlo.nazov AS nazov_kuzla,
-    element.nazov AS nazov_elementu,
-    predmet.nazov AS nazov_predmetu
-FROM kuzlo
-JOIN element ON (kuzlo.id_prim_elementu = element.id_element )
-JOIN zvitok ON (kuzlo.id_kuzlo = zvitok.id_kuzlo)
-JOIN predmet ON (predmet.id_predmet = zvitok.id_predmet)
-WHERE element.nazov = 'voda';
+    item.name as grimoar_name,
+    COUNT(spells_grimoar.id_spell) as spell_count,
+    magician.login as owner_of_grimoar
+FROM spells_grimoar
+JOIN spell ON (spells_grimoar.id_spell = spell.id_spell)
+INNER JOIN item ON (item.id_item = spells_grimoar.id_grimoar)
+JOIN magician ON (item.login_magician = magician.login)
+WHERE item.type = 'grimoar'
+GROUP BY item.name, magician.login;
+
 ------------------------------------------------
 ------   Vyhľadá kúzla a vypočíta jeho    ------
 -- priemernú silu a vypíše jeho prim. element --
@@ -377,12 +374,12 @@ WHERE element.nazov = 'voda';
 ----         zoradený od najväčšieho        ----
 ------------------------------------------------
 SELECT
-    kuzlo.nazov AS nazov_kuzla,
-    AVG(sila) AS priemerna_sila
-FROM kuzlo
-JOIN element ON kuzlo.id_prim_elementu = element.id_element
-GROUP BY kuzlo.nazov
-HAVING AVG(sila) > 200
+    spell.name AS nazov_kuzla,
+    AVG(strength) AS priemerna_sila
+FROM spell
+JOIN element ON spell.id_prim_element = element.id_element
+GROUP BY spell.name
+HAVING AVG(strength) > 200
 ORDER BY priemerna_sila DESC ;
 
 ------------------------------------------------
@@ -392,26 +389,26 @@ ORDER BY priemerna_sila DESC ;
 ----         zoradený od najväčšieho        ----
 ------------------------------------------------
 -- vyberie meno kuzelnika a count pre daného kuzelnika
-SELECT kuzelnik.meno AS meno_kuzelnika,
-       COUNT(id_historia_grimoar) AS pocet_grimoarov
-FROM historia_grimoar
-LEFT JOIN kuzelnik ON historia_grimoar.id_historia_kuzelnik = kuzelnik.id_kuzelnik
-GROUP BY kuzelnik.meno
-ORDER BY COUNT(id_historia_grimoar) DESC;
+SELECT magician.name AS meno_kuzelnika,
+       COUNT(id_history_grimoar) AS pocet_grimoarov
+FROM history_grimoar
+LEFT JOIN magician ON history_grimoar.login_history_magician = magician.login
+GROUP BY magician.name
+ORDER BY COUNT(login_history_magician) DESC;
 
 ------------------------------------------------
 ------  Vyhľadá všetky elementy, ktoré sú ------
 ----  súčasťou vedľajších elementov v kúzle ----
 ---------  využitie predikátu EXISTS   ---------
 ------------------------------------------------
-SELECT element.nazov AS nazov_elementu
+SELECT element.name AS nazov_elementu
 FROM  element
 WHERE
     EXISTS
     (
-        SELECT vedlajsie_elementy_v_kuzle.id_element
-        FROM vedlajsie_elementy_v_kuzle
-        WHERE element.id_element=vedlajsie_elementy_v_kuzle.id_element
+        SELECT side_elements_spell.id_element
+        FROM side_elements_spell
+        WHERE element.id_element=side_elements_spell.id_element
     );
 
 ------------------------------------------------
@@ -419,9 +416,9 @@ WHERE
 --vypíše tých, ktorý nevlastnia žiadny predmet--
 ---------  využitie predikátu IN  ---------
 ------------------------------------------------
-SELECT * FROM kuzelnik
-WHERE id_kuzelnik NOT IN
-      (SELECT predmet.id_kuzelnik
-      FROM predmet
-      WHERE predmet.id_kuzelnik IS NOT NULL);
+SELECT * FROM magician
+WHERE login NOT IN
+      (SELECT item.login_magician
+      FROM item
+      WHERE item.login_magician IS NOT NULL);
 
