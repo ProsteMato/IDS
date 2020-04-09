@@ -543,17 +543,17 @@ GRANT EXECUTE ON spells_in_grimoar to xondru16;
 -----           Materialized view             ---
 ---- shows spells with primary element air  ---
 -------------------------------------------------
-CREATE MATERIALIZED VIEW spells_with_primary_element_water AS
+CREATE MATERIALIZED VIEW spells_with_primary_element_air AS
     SELECT name
     FROM xkocim05.spell
     WHERE id_prim_element = 3;
 
 --- Displays materialized view
-SELECT * FROM spells_with_primary_element_water;
+SELECT * FROM spells_with_primary_element_air;
 
 --- Add new item into table
 INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
 VALUES ('Accio', 15, 'charm', 400, 3);
 
 --- Materialized view didn't change
-SELECT * FROM spells_with_primary_element_water
+SELECT * FROM spells_with_primary_element_air
