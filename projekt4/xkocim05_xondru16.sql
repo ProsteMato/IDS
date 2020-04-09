@@ -212,7 +212,6 @@ CREATE OR REPLACE TRIGGER grimoar_history
         IF UPDATING THEN
             IF :NEW.login_magician IS NOT NULL AND :NEW.login_magician != :OLD.login_magician
             THEN
-                dbms_output.put_line('Updating');
                 UPDATE history_grimoar
                 SET stopped_owning_date = CURRENT_DATE
                 WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar;
@@ -224,7 +223,6 @@ CREATE OR REPLACE TRIGGER grimoar_history
                 UPDATE history_grimoar
                 SET stopped_owning_date = CURRENT_DATE
                 WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar;
-                dbms_output.put_line('Updated');
             END IF;
         END IF;
     EXCEPTION
