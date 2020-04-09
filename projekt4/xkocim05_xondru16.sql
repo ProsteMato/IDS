@@ -23,6 +23,7 @@ DROP TABLE spells_grimoar CASCADE CONSTRAINTS ;
 DROP TABLE spell CASCADE CONSTRAINTS ;
 DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
 DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
+DROP FUNCTION spells_in_grimoar ;
 
 ----------- CREATE TABLES -----------
 
@@ -148,8 +149,7 @@ CREATE TABLE history_grimoar
             REFERENCES magician(login),
     CONSTRAINT id_grimoar_FK_HG
             FOREIGN KEY (id_history_grimoar)
-            REFERENCES item(id_item),
-    UNIQUE (login_history_magician, id_history_grimoar)
+            REFERENCES item(id_item)
 );
 
 CREATE TABLE spells_grimoar
@@ -196,17 +196,38 @@ CREATE OR REPLACE TRIGGER kuzelnik_gen_id
 -----------   TRIGGER 2     --------------
 ------------------------------------------
 CREATE OR REPLACE TRIGGER grimoar_history
-    AFTER INSERT OR UPDATE ON grimoar
+    AFTER INSERT OR UPDATE ON item
     FOR EACH ROW
     BEGIN
-        IF :NEW.id_vlastni IS NOT NULL
-        THEN
-            INSERT INTO historia_grimoar(id_historia_kuzelnik, id_historia_grimoar)
-            VALUES (:NEW.id_vlastni, :NEW.id_grimoar);
+        IF INSERTING THEN
+            IF :NEW.login_magician IS NOT NULL AND :NEW.type = 'grimoar'
+            THEN
+                INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date)
+                VALUES (:NEW.login_magician, :NEW.id_item, CURRENT_DATE);
+            END IF;
+        END IF;
+
+        IF UPDATING THEN
+            IF :NEW.login_magician IS NOT NULL AND :NEW.login_magician != :OLD.login_magician
+            THEN
+                dbms_output.put_line('Updating');
+                UPDATE history_grimoar
+                SET stopped_owning_date = CURRENT_DATE
+                WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar;
+                INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date)
+                VALUES (:NEW.login_magician, :NEW.id_item, CURRENT_DATE);
+
+            ELSIF :NEW.login_magician IS NULL AND :OLD.login_magician IS NOT NULL
+            THEN
+                UPDATE history_grimoar
+                SET stopped_owning_date = CURRENT_DATE
+                WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar;
+                dbms_output.put_line('Updated');
+            END IF;
         END IF;
     EXCEPTION
         WHEN others then
-            dbms_output.put_line('Some error message you can build here or up above');
+            dbms_output.put_line('Some error happened!');
     END;
 /
 ------------------------------------------------
@@ -273,22 +294,21 @@ END;
 ------- Procedúra na ziskanie počtu jednotlivch kúziel v grimoáry ------
 -------            použitie kurzosu spolu s výnimkami             ------
 ------------------------------------------------------------------------
-CREATE OR REPLACE PROCEDURE kuzla_v_grimoare (id_grimoaru IN INT) AS
-    CURSOR kuzla_v_grim IS SELECT id_kuzlo from kuzla_v_grimoaroch where id_grimoar = id_grimoaru;
+CREATE OR REPLACE PROCEDURE spells_in_grimoar (id_grimoaru IN INT) AS
+    CURSOR kuzla_v_grim IS SELECT id_spell from spells_grimoar where id_grimoar = id_grimoaru;
     TYPE count_kuzlo IS TABLE OF NUMBER INDEX BY VARCHAR2(255);
-    kuzlo_id kuzla_v_grimoaroch.id_kuzlo%TYPE;
+    kuzlo_id spells_grimoar.id_spell%TYPE;
     count_kuziel count_kuzlo := count_kuzlo();
     grimoar_name VARCHAR2(255);
     nazov_kuzla VARCHAR2(255);
 BEGIN
-    SELECT predmet.nazov INTO grimoar_name FROM predmet
-    JOIN grimoar ON grimoar.id_grimoar_predmet = predmet.id_predmet
-    WHERE grimoar.id_grimoar = id_grimoaru;
+    SELECT item.name INTO grimoar_name FROM item
+    WHERE item.id_item = id_grimoaru;
     OPEN kuzla_v_grim;
     LOOP
         FETCH kuzla_v_grim into kuzlo_id;
         EXIT WHEN kuzla_v_grim%notfound;
-        SELECT kuzlo.nazov into nazov_kuzla from kuzlo where id_kuzlo = kuzlo_id;
+        SELECT spell.name into nazov_kuzla from spell where id_spell = kuzlo_id;
         if (count_kuziel.EXISTS (nazov_kuzla)) then
             count_kuziel(nazov_kuzla) := count_kuziel(nazov_kuzla) + 1;
         else
@@ -302,6 +322,7 @@ BEGIN
         DBMS_OUTPUT.PUT_LINE(count_kuziel(nazov_kuzla) || 'x ' || nazov_kuzla);
         nazov_kuzla := count_kuziel.NEXT(nazov_kuzla);
     END LOOP;
+    CLOSE kuzla_v_grim;
 
 EXCEPTION
     WHEN NO_DATA_FOUND THEN
@@ -437,6 +458,12 @@ VALUES ('Hermiona99', 1, TO_DATE ('2020-03-29 00:00:00' , 'YYYY-MM-DD HH24:MI:SS
 
 INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
 VALUES ('Hermiona99', 3, TO_DATE ('2020-02-15 15:45:58', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-23 18:25:48', 'YYYY-MM-DD HH24:MI:SS' ));
+
+UPDATE item
+SET login_magician = 'Harry19'
+WHERE id_item = 2;
+
+SELECT * from history_grimoar;
 
 ---------- DATA spells in grimoar -----
 INSERT INTO spells_grimoar(id_grimoar, id_spell)
