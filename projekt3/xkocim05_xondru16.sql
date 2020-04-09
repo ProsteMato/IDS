@@ -234,6 +234,9 @@ VALUES ('Wingardium Leviosa ', 2, 'defence', '500', 3);
 INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
 VALUES ('aqua ', 3, 'attack', '1000', 1);
 
+INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
+VALUES ('aqua ', 3, 'attack', '100', 1);
+
 ---------- DATA item -----
 INSERT INTO item(name, type, magic_grimoar, id_grimoar_element)
 VALUES ('GRIM01', 'grimoar', 40, 1);
@@ -325,41 +328,41 @@ INSERT INTO side_elements_spell(id_element, id_spell) VALUES (1, 3);
 
 
 -------------------------------------------------
------------------ 3. PROJEKT --------------------
+----------------- 3. PROJECT --------------------
 -------------------------------------------------
 
 ------------------------------------------------
--- Vyhľadá všetky súboje, v ktorých sa ---------
---      zúčastnil kúzelnik Hermiona    ---------
------- SELECT s dvoma tabuľkami ----------------
+------ Search all battles in which magician ----
+------        Hermiona was present   -----------
+-------- SELECT with two tables ----------------
 ------------------------------------------------
 SELECT
-    k1.name vyzivatel,
-    k2.name super
+    k1.name AS magician_challenger,
+    k2.name AS magician_opponent
 FROM history_battles
 INNER JOIN magician k1 ON login_challenger = k1.login
 INNER JOIN magician k2 ON login_opponent = k2.login
 WHERE k1.name = 'Hermiona' OR k2.name = 'Hermiona';
 
 ------------------------------------------------
------ Vyhľadá všetky kúzla a primárne ----------
------    elementy ktoré obsahujú      ----------
----------- SELECT s dvoma tabuľkami ------------
+------   Search all spells and primary   -------
+-------    elements they contains      ---------
+---------- SELECT with two tables   ------------
 ------------------------------------------------
-SELECT spell.name AS nazov_kuzla,
-       element.name AS nazov_elementu
+SELECT spell.name AS name_of_spell,
+       element.name AS name_of_element
 FROM spell
 LEFT JOIN element ON spell.id_prim_element = element.id_element;
 
 ------------------------------------------------
-------- Vyhľadá všetky zvitky, ktoré -----------
------ obsahujú  kúzlo s elementom voda  --------
-------    SELECT s tromi tabuľkami    ----------
+------- Search all grimoars, count the    ------
+--     spells in it and write the owner. -------
+------    SELECT with three tables    ----------
 ------------------------------------------------
 SELECT
-    item.name as grimoar_name,
-    COUNT(spells_grimoar.id_spell) as spell_count,
-    magician.login as owner_of_grimoar
+    item.name AS grimoar_name,
+    COUNT(spells_grimoar.id_spell) AS spell_count,
+    magician.login AS owner_of_grimoar
 FROM spells_grimoar
 JOIN spell ON (spells_grimoar.id_spell = spell.id_spell)
 INNER JOIN item ON (item.id_item = spells_grimoar.id_grimoar)
@@ -368,40 +371,41 @@ WHERE item.type = 'grimoar'
 GROUP BY item.name, magician.login;
 
 ------------------------------------------------
-------   Vyhľadá kúzla a vypočíta jeho    ------
--- priemernú silu a vypíše jeho prim. element --
-----   GROUP BY s agregačnou funkciou AVG    ---
-----         zoradený od najväčšieho        ----
+--       Search all spells and counts its     --
+--      average strength and writes only      --
+--        the spells that have average        --
+--         strength bigger than 200           --
+--   GROUP BY with aggregation function AVG   --
+----           sorted by largest            ----
 ------------------------------------------------
 SELECT
-    spell.name AS nazov_kuzla,
-    AVG(strength) AS priemerna_sila
+    spell.name AS name_of_spell,
+    AVG(spell.strength) AS average_strength
 FROM spell
 JOIN element ON spell.id_prim_element = element.id_element
 GROUP BY spell.name
-HAVING AVG(strength) > 200
-ORDER BY priemerna_sila DESC ;
+HAVING AVG(spell.strength) > 200
+ORDER BY average_strength DESC ;
 
 ------------------------------------------------
-------   Vyhľadá kúzelníkov a spočíta     ------
-------     koľko grimoárov vlastnili      ------
-----   GROUP BY s agregačnou funkciou COUNT  ---
-----         zoradený od najväčšieho        ----
+----    Search all magicians and count how  ----
+---       many of grimoars they owned       ----
+-- GROUP BY  with aggregation function COUNT  --
+----             sorted by largest          ----
 ------------------------------------------------
--- vyberie meno kuzelnika a count pre daného kuzelnika
-SELECT magician.name AS meno_kuzelnika,
-       COUNT(id_history_grimoar) AS pocet_grimoarov
+SELECT magician.name AS name_of_magician,
+       COUNT(id_history_grimoar) AS number_of_grimoars
 FROM history_grimoar
 LEFT JOIN magician ON history_grimoar.login_history_magician = magician.login
 GROUP BY magician.name
 ORDER BY COUNT(login_history_magician) DESC;
 
 ------------------------------------------------
-------  Vyhľadá všetky elementy, ktoré sú ------
-----  súčasťou vedľajších elementov v kúzle ----
----------  využitie predikátu EXISTS   ---------
+---- Search all elements that are a part of ----
+------       side elements in spell       ------
+---------  use of predicate EXISTS     ---------
 ------------------------------------------------
-SELECT element.name AS nazov_elementu
+SELECT element.name AS name_of_element
 FROM  element
 WHERE
     EXISTS
@@ -412,9 +416,9 @@ WHERE
     );
 
 ------------------------------------------------
---------  Vyhľadá všetkých kúzelníkov ----------
---vypíše tých, ktorý nevlastnia žiadny predmet--
----------  využitie predikátu IN  ---------
+-----  Search all magicians that don't own  ----
+-----                 any item              ----
+---------      use of predicate  IN     --------
 ------------------------------------------------
 SELECT * FROM magician
 WHERE login NOT IN

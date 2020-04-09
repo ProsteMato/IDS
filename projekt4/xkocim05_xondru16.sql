@@ -25,11 +25,13 @@ DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
 DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
 DROP FUNCTION spells_in_grimoar ;
 
+DROP SEQUENCE element_sequence;
+
 ----------- CREATE TABLES -----------
 
 CREATE TABLE element
 (
-    id_element INT      GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    id_element INT      NOT NULL PRIMARY KEY,
     name       VARCHAR(255) NOT NULL UNIQUE,
     color_of_magic VARCHAR(255) NOT NULL,
     specialization VARCHAR(255) NOT NULL
@@ -175,24 +177,24 @@ CREATE TABLE side_elements_spell
 
 
 ------------------------------------------
---- Automatické generovanie hodnôt PK ----
----        pre tabuľku kuznik          ---
------------   TRIGGER 1     --------------
+--- Automatic generation of PK's values --
+---        for table element           ---
+-----------     TRIGGER 1     ------------
 ------------------------------------------
-CREATE SEQUENCE kuzelnik_sequence
+CREATE SEQUENCE element_sequence
     START WITH 1
     INCREMENT BY 1;
-CREATE OR REPLACE TRIGGER kuzelnik_gen_id
-    BEFORE INSERT ON kuzelnik
+CREATE OR REPLACE TRIGGER element_gen_id
+    BEFORE INSERT ON element
     FOR EACH ROW
     BEGIN
-        :NEW.id_kuzelnik := kuzelnik_sequence.nextval;
+        :NEW.id_element := element_sequence.nextval;
     END;
 /
 
 ------------------------------------------
-----  Trigger na ukladanie histórie  -----
-----           grimoárov             -----
+----  Trigger for saving history of  -----
+----           grimoars              -----
 -----------   TRIGGER 2     --------------
 ------------------------------------------
 CREATE OR REPLACE TRIGGER grimoar_history
@@ -230,60 +232,61 @@ CREATE OR REPLACE TRIGGER grimoar_history
             dbms_output.put_line('Some error happened!');
     END;
 /
-------------------------------------------------
-------- Procedúra na vypočítanie win-rate ------
-------- kúzelníka, spolu s ošetrením chýb ------
-------------------------------------------------
-CREATE OR REPLACE PROCEDURE win_rate (kuzelnik_meno IN VARCHAR ) IS
-    CURSOR suboj_kuzelnik IS SELECT * FROM suboj;
-    CURSOR kuzelnici IS SELECT id_kuzelnik FROM kuzelnik WHERE kuzelnik_meno = meno;
-    TYPE suboj_pocet IS TABLE OF NUMBER INDEX BY VARCHAR2(255);
-    pocet_subojov suboj_pocet := suboj_pocet();
-    pocet_vyhier suboj_pocet := suboj_pocet();
-    win_rate_kuzelnik NUMBER;
-    suboj_row suboj%rowtype;
+--------------------------------------------------
+--   Procedure that counts win rate of magician --
+--------------------------------------------------
+CREATE OR REPLACE PROCEDURE win_rate (name_of_magician IN VARCHAR ) IS
+    CURSOR battle_magician IS SELECT * FROM history_battles;
+    CURSOR magicians IS SELECT magician.login FROM magician WHERE name_of_magician = magician.name;
+    TYPE number_of_battles IS TABLE OF NUMBER INDEX BY VARCHAR2(255);
+    number_of_battles_magician number_of_battles := number_of_battles();
+    number_of_wins number_of_battles := number_of_battles();
+    win_rate_magician NUMBER;
+    battle_row history_battles%rowtype;
 BEGIN
-    FOR kuzelnik in kuzelnici LOOP
-        pocet_subojov(kuzelnik.id_kuzelnik) := 0;
-        pocet_vyhier(kuzelnik.id_kuzelnik) := 0;
+    FOR magician in magicians LOOP
+        number_of_battles_magician(magician.login) := 0;
+        number_of_wins(magician.login) := 0;
     end loop;
 
-    OPEN suboj_kuzelnik;
+    OPEN battle_magician;
     LOOP
-        FETCH suboj_kuzelnik INTO suboj_row;
-        EXIT WHEN suboj_kuzelnik%NOTFOUND;
-        FOR kuzelnik in kuzelnici LOOP
-        --spočíta počet súbojov v ktorých sa kúzelník zúčastnil --
-        IF suboj_row.id_vyzyvatel = kuzelnik.id_kuzelnik OR suboj_row.id_super = kuzelnik.id_kuzelnik THEN
-           pocet_subojov(kuzelnik.id_kuzelnik) := pocet_subojov(kuzelnik.id_kuzelnik) + 1;
+        FETCH battle_magician INTO battle_row;
+        EXIT WHEN battle_magician%NOTFOUND;
+        FOR magician in magicians LOOP
+        --counts number of battles that magician was a part of  --
+        IF battle_row.login_challenger = magician.login OR battle_row.login_opponent = magician.login THEN
+           number_of_battles_magician(magician.login) := number_of_battles_magician(magician.login) + 1;
         END IF;
 
-        --spočíta počet súbojov, ktoré kúzelník vyhral
-        IF suboj_row.id_vitaz = kuzelnik.id_kuzelnik THEN
-           pocet_vyhier(kuzelnik.id_kuzelnik) := pocet_vyhier(kuzelnik.id_kuzelnik) + 1;
+        --counts number of battles that magician won
+        IF battle_row.login_winner = magician.login THEN
+           number_of_wins(magician.login) := number_of_wins(magician.login) + 1;
         END If;
         end loop;
     END LOOP;
-    CLOSE suboj_kuzelnik;
+    CLOSE battle_magician;
 
-    for kuzelnik in kuzelnici LOOP
-        IF pocet_subojov(kuzelnik.id_kuzelnik) = 0 then
-            DBMS_OUTPUT.PUT_LINE('Kuzelnik s id ' || kuzelnik.id_kuzelnik || ' a s menom ' || kuzelnik_meno || ' nehrál žiadny súboj!');
+    for magician in magicians LOOP
+        IF number_of_battles_magician(magician.login) = 0 then
+            DBMS_OUTPUT.PUT_LINE('Magician with login ' || magician.login || ' and with name ' || name_of_magician
+                                     || ' wasnt a part of any battle!');
             CONTINUE;
         end if;
 
-        if pocet_vyhier(kuzelnik.id_kuzelnik) = 0 then
-            win_rate_kuzelnik := 0;
-            DBMS_OUTPUT.PUT_LINE('Kúzelník ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik) || '%.' );
+        if number_of_wins(magician.login) = 0 then
+            win_rate_magician := 0;
+            DBMS_OUTPUT.PUT_LINE('Magician ' || name_of_magician || ' has win-rate: ' || TO_CHAR(win_rate_magician) || '%.' );
         else
-            win_rate_kuzelnik := pocet_vyhier(kuzelnik.id_kuzelnik) / pocet_subojov(kuzelnik.id_kuzelnik) * 100;
-            DBMS_OUTPUT.PUT_LINE('Kúzelník s id '|| kuzelnik.id_kuzelnik || ' a s menom ' || kuzelnik_meno || ' má win-rate: ' || TO_CHAR(win_rate_kuzelnik, '999.99') || '%.' );
+            win_rate_magician := number_of_wins(magician.login) / number_of_battles_magician(magician.login) * 100;
+            DBMS_OUTPUT.PUT_LINE('Magician with login ' || magician.login || ' and with name ' || name_of_magician
+                                     || ' has win-rate: ' || TO_CHAR(win_rate_magician, '999.99') || '%.' );
         end if;
     end loop;
 
      EXCEPTION
         WHEN NO_DATA_FOUND THEN
-            DBMS_OUTPUT.PUT_LINE('Žiadny súboj s daným kúzelníkom neexistuje.');
+            DBMS_OUTPUT.PUT_LINE('No data with given magician found.');
         WHEN OTHERS THEN
             DBMS_OUTPUT.PUT_LINE('Some other error.');
 END;
@@ -291,8 +294,7 @@ END;
 
 
 ------------------------------------------------------------------------
-------- Procedúra na ziskanie počtu jednotlivch kúziel v grimoáry ------
--------            použitie kurzosu spolu s výnimkami             ------
+------- Procedure for displaying number of spells in grimoar      ------
 ------------------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE spells_in_grimoar (id_grimoaru IN INT) AS
     CURSOR kuzla_v_grim IS SELECT id_spell from spells_grimoar where id_grimoar = id_grimoaru;
@@ -356,10 +358,16 @@ INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
 VALUES ('Dumbo12', 'Harry19', 'Dumbo12');
 
 INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
-VALUES ('Harry19', 'Hermiona99', 'Hermiona99');
+VALUES ('Harry19', 'Hermiona99', 'Harry19');
 
 INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
 VALUES ('Hermiona99', 'GinyWeasley', 'Hermiona99');
+
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Hermiona99', 'GinyWeasley', 'GinyWeasley');
+
+INSERT INTO history_battles(login_challenger, login_opponent, login_winner)
+VALUES ('Dumbo12', 'Voldi14', 'Dumbo12');
 
 ---------- DATA element -----
 INSERT INTO element(name, color_of_magic, specialization)
@@ -383,13 +391,13 @@ VALUES (74982, 12785, -1745, 1, 1);
 
 ---------- DATA spell -----
 INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
-VALUES ('Avadagedabra', 10, 'attack', '5000', 2);
+VALUES ('Avadagedabra', 10, 'attack', 5000, 2);
 
 INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
-VALUES ('Wingardium Leviosa ', 2, 'defence', '500', 3);
+VALUES ('Wingardium Leviosa ', 2, 'defence', 500, 3);
 
 INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
-VALUES ('aqua ', 3, 'attack', '1000', 1);
+VALUES ('aqua ', 3, 'attack', 1000, 1);
 
 ---------- DATA item -----
 INSERT INTO item(name, type, magic_grimoar, id_grimoar_element)
@@ -488,18 +496,18 @@ INSERT INTO side_elements_spell(id_element, id_spell) VALUES (1, 3);
 
 
 -----------------------------------------------
------- Predvedenie funkcie triggerov ----------
+------   Demonstration of triggers   ----------
 -----------------------------------------------
-SELECT * from magician;
-INSERT INTO magician(meno, mana, uroven)
-VALUES ('Ron Weasley', 158, 'S');
-SELECT * from kuzelnik;
+SELECT * from element;
+INSERT INTO element(name, color_of_magic, specialization)
+VALUES ('earth', 'brown', 'attack');
+SELECT * from element;
 
-SELECT * from historia_grimoar;
-SELECT * from suboj;
+SELECT * from history_grimoar;
+SELECT * from history_battles;
 -------------------------------------------------
------      Príklad zavolania procedúry     ------
------   win-rate pre kúzelníka 'Hermiona'  ------
+---   Example of calling procedure win-rate   ---
+---           for magician Hermiona           ---
 -------------------------------------------------
 BEGIN
     win_rate('Hermiona');
@@ -507,16 +515,16 @@ END;
 
 
 -----------------------------------------------------
------      Príklad zavolania procedúry         ------
------   kuzla_v_grimoare pre grimoar s id '1'  ------
+--  Example of calling procedure spells_in_grimoar --
+--              with id_grimoar = 1                --
 -----------------------------------------------------
 BEGIN
     spells_in_grimoar(1);
 END;
 
 ------------------------------------------------
----  Definícia prístupových práv pre druhého ---
----          člena týmu: xkocim05            ---
+---  Definition of authorization for second  ---
+---          member of team: xondru16        ---
 ------------------------------------------------
 GRANT ALL ON magician to xondru16;
 GRANT ALL ON history_battles to xondru16;
@@ -531,3 +539,23 @@ GRANT ALL ON spell to xondru16;
 
 GRANT EXECUTE ON win_rate to xondru16;
 GRANT EXECUTE ON spells_in_grimoar to xondru16;
+
+
+-------------------------------------------------
+-----           Materialized view             ---
+---- shows spells with primary element air  ---
+-------------------------------------------------
+CREATE MATERIALIZED VIEW spells_with_primary_element_water AS
+    SELECT name
+    FROM xkocim05.spell
+    WHERE id_prim_element = 3;
+
+--- Displays materialized view
+SELECT * FROM spells_with_primary_element_water;
+
+--- Add new item into table
+INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
+VALUES ('Accio', 15, 'charm', 400, 3);
+
+--- Materialized view didn't change
+SELECT * FROM spells_with_primary_element_water
