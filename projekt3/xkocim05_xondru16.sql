@@ -337,7 +337,7 @@ INSERT INTO side_elements_spell(id_element, id_spell) VALUES (1, 3);
 
 ------------------------------------------------
 ------ Search all battles in which magician ----
-------        Hermiona was present   -----------
+------      Hermiona was present       ---------
 -------- SELECT with two tables ----------------
 ------------------------------------------------
 SELECT
@@ -349,30 +349,32 @@ INNER JOIN magician k2 ON login_opponent = k2.login
 WHERE k1.name = 'Hermiona' OR k2.name = 'Hermiona';
 
 ------------------------------------------------
-------   Search all spells and primary   -------
--------    elements they contains      ---------
----------- SELECT with two tables   ------------
+------  Writes all coordinates of place  -------
+------ leaking magic and writes element --------
+------       that is leaking there      --------
+----------   SELECT with two tables   ----------
 ------------------------------------------------
-SELECT spell.name AS name_of_spell,
-       element.name AS name_of_element
-FROM spell
-LEFT JOIN element ON spell.id_prim_element = element.id_element;
+SELECT magical_place.coordinate_X as coordinate_x,
+       magical_place.coordinate_Y as coordinate_y,
+       magical_place.coordinate_Z as coordinate_z,
+       element.name AS element
+FROM magical_place
+LEFT JOIN element ON (element.id_element = magical_place.id_place);
 
 ------------------------------------------------
-------- Search all grimoars, count the    ------
---     spells in it and write the owner. -------
+------- Search all items of type grimoar -------
+------  and write's the spells in it ad  -------
+------   primary element of this spell   -------
 ------    SELECT with three tables    ----------
 ------------------------------------------------
-SELECT
-    item.name AS grimoar_name,
-    COUNT(spells_grimoar.id_spell) AS spell_count,
-    magician.login AS owner_of_grimoar
-FROM spells_grimoar
-JOIN spell ON (spells_grimoar.id_spell = spell.id_spell)
-INNER JOIN item ON (item.id_item = spells_grimoar.id_grimoar)
-JOIN magician ON (item.login_magician = magician.login)
-WHERE item.type = 'grimoar'
-GROUP BY item.name, magician.login;
+SELECT item.name AS grimoar_name,
+       spell.name AS spell_in_grimoar,
+       element.name AS element_name
+FROM item
+INNER JOIN spells_grimoar ON (spells_grimoar.id_grimoar = item.id_item)
+INNER JOIN spell ON (spell.id_spell = spells_grimoar.id_spell)
+INNER JOIN element ON (element.id_element = spell.id_prim_element)
+WHERE item.type = 'grimoar';
 
 ------------------------------------------------
 --       Search all spells and counts its     --
@@ -386,7 +388,7 @@ SELECT
     spell.name AS name_of_spell,
     AVG(spell.strength) AS average_strength
 FROM spell
-JOIN element ON spell.id_prim_element = element.id_element
+LEFT JOIN element ON spell.id_prim_element = element.id_element
 GROUP BY spell.name
 HAVING AVG(spell.strength) > 200
 ORDER BY average_strength DESC ;
