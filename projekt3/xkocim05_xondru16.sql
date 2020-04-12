@@ -52,7 +52,7 @@ CREATE TABLE magician
     password       VARCHAR(255)  NOT NULL CHECK(REGEXP_LIKE(password, '.*[A-Z]+.*[0-9]+.*')),
     name        VARCHAR(255)  NOT NULL,
     mana        INT           NOT NULL CHECK ( mana >= 0 ),
-    level_magic      VARCHAR(255)  NOT NULL
+    level_magic      VARCHAR(255)  NOT NULL CHECK (REGEXP_LIKE(level_magic, 'E|D|C|B|A|S|SS'))
 );
 
 CREATE TABLE item
@@ -83,8 +83,7 @@ CREATE TABLE item
 
 CREATE TABLE active_grimoar
 (
-    id_active_grimoar INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    login_magician           VARCHAR(255) NOT NULL,
+    login_magician           VARCHAR(255) NOT NULL PRIMARY KEY ,
     active_grimoar INT  DEFAULT NULL,
     CONSTRAINT id_active_grimoar_FK
             FOREIGN KEY (active_grimoar)
@@ -150,8 +149,7 @@ CREATE TABLE history_grimoar
             REFERENCES magician(login),
     CONSTRAINT id_grimoar_FK_HG
             FOREIGN KEY (id_history_grimoar_FK)
-            REFERENCES item(id_item),
-    UNIQUE (login_history_magician, id_history_grimoar)
+            REFERENCES item(id_item)
 );
 
 CREATE TABLE spells_grimoar
@@ -169,11 +167,11 @@ CREATE TABLE spells_grimoar
 
 CREATE TABLE side_elements_spell
 (
-    id_side_elements_spell INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     id_element INT NOT NULL,
     id_spell INT NOT NULL,
     CONSTRAINT id_element_FK_SES FOREIGN KEY (id_element) REFERENCES element(id_element),
-    CONSTRAINT id_spell_FK_IN_SES FOREIGN KEY (id_spell) REFERENCES spell(id_spell)
+    CONSTRAINT id_spell_FK_IN_SES FOREIGN KEY (id_spell) REFERENCES spell(id_spell),
+    PRIMARY KEY (id_spell, id_element)
 );
 
 
