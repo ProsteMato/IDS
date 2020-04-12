@@ -83,6 +83,7 @@ CREATE TABLE item
 
 CREATE TABLE active_grimoar
 (
+    id_active_grimoar INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     login_magician           VARCHAR(255) NOT NULL,
     active_grimoar INT  DEFAULT NULL,
     CONSTRAINT id_active_grimoar_FK
@@ -126,10 +127,11 @@ CREATE TABLE magical_place
 
 CREATE TABLE synergy_element
 (
-    id_synergy_element    INT    NOT NULL,
+    id_synergy_element INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
+    id_synergy_element_FK    INT    NOT NULL,
     login_synergy_magician  VARCHAR(255)    NOT NULL,
     CONSTRAINT id_synergy_element_FK_SE
-            FOREIGN KEY (id_synergy_element)
+            FOREIGN KEY (id_synergy_element_FK)
             REFERENCES element(id_element),
     CONSTRAINT login_synergy_magician_FK_SE
             FOREIGN KEY (login_synergy_magician)
@@ -138,15 +140,16 @@ CREATE TABLE synergy_element
 
 CREATE TABLE history_grimoar
 (
+    id_history_grimoar INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     login_history_magician     VARCHAR(255)    NOT NULL,
-    id_history_grimoar      INT    NOT NULL,
+    id_history_grimoar_FK      INT    NOT NULL,
     started_owning_date      DATE NOT NULL,
     stopped_owning_date      DATE DEFAULT NULL,
     CONSTRAINT login_owner_FK_HG
             FOREIGN KEY (login_history_magician)
             REFERENCES magician(login),
     CONSTRAINT id_grimoar_FK_HG
-            FOREIGN KEY (id_history_grimoar)
+            FOREIGN KEY (id_history_grimoar_FK)
             REFERENCES item(id_item),
     UNIQUE (login_history_magician, id_history_grimoar)
 );
@@ -166,6 +169,7 @@ CREATE TABLE spells_grimoar
 
 CREATE TABLE side_elements_spell
 (
+    id_side_elements_spell INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
     id_element INT NOT NULL,
     id_spell INT NOT NULL,
     CONSTRAINT id_element_FK_SES FOREIGN KEY (id_element) REFERENCES element(id_element),
@@ -274,35 +278,35 @@ INSERT INTO active_grimoar(login_magician, active_grimoar)
 VALUES ('Hermiona99', 2);
 
 ---------- DATA synergy element ----
-INSERT INTO synergy_element(id_synergy_element, login_synergy_magician)
+INSERT INTO synergy_element(id_synergy_element_FK, login_synergy_magician)
 VALUES (1,'Hermiona99');
 
-INSERT INTO synergy_element(id_synergy_element, login_synergy_magician)
+INSERT INTO synergy_element(id_synergy_element_FK, login_synergy_magician)
 VALUES (1,'Dumbo12');
 
-INSERT INTO synergy_element(id_synergy_element, login_synergy_magician)
+INSERT INTO synergy_element(id_synergy_element_FK, login_synergy_magician)
 VALUES (2, 'Harry19');
 
 ----------- DATA history grimoar ---
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
 VALUES ('Dumbo12',1, TO_DATE( '2020-03-01 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE( '2020-03-27 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
 VALUES ('Harry19', 1, TO_DATE ('2020-03-27 18:10:26', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-03-28 14:17:00', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
 VALUES ('Harry19', 2, TO_DATE ('2020-02-10 17:59:25', 'YYYY-MM-DD HH24:MI:SS' ),TO_DATE ('2020-02-15 10:10:10', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
 VALUES ('Harry19', 3, TO_DATE ('2020-02-01 02:06:08', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-10 12:12:12', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
 VALUES ('Hermiona99', 2, TO_DATE ('2020-02-20 14:14:58', 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
 VALUES ('Hermiona99', 1, TO_DATE ('2020-03-29 00:00:00' , 'YYYY-MM-DD HH24:MI:SS' ));
 
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar, started_owning_date, stopped_owning_date)
+INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
 VALUES ('Hermiona99', 3, TO_DATE ('2020-02-15 15:45:58', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-23 18:25:48', 'YYYY-MM-DD HH24:MI:SS' ));
 
 ---------- DATA spells in grimoar -----
