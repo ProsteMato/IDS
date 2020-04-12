@@ -1,0 +1,70 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[czech, slovak]{babel}
+\usepackage{graphicx}
+\usepackage[left=1.5cm,text={18cm, 23cm}, top=2.5cm]{geometry} 
+
+\begin{document}
+
+%%% TITULNÁ STRÁNKA %%%% 
+
+ \begin{titlepage}
+	\begin{figure}
+	    \centering
+	    \includegraphics{FIT_logo.pdf}
+	\end{figure}
+    
+	\begin{center}
+	   \vspace*{\stretch{0.440}} 
+   \Huge{47. Svet mágie} \\ 
+    \LARGE{Dokumentácia} \\ 
+	\end{center}
+   
+     \vspace*{\stretch{0.518}}
+     \begin{center}
+     \large
+         \textbf{Martin Koči} (xkocim05) \\
+         \textbf{Magdaléna Ondrušková} (xondru16) \\ 
+     \end{center}
+     \vspace{\stretch{0.100}}
+   \large{10.04.2020} \hfill \large{Brno}
+\end{titlepage}
+\newpage
+ %%%%% OBSAH 
+\tableofcontents
+
+\newpage
+%%%%%% ZADANIE 
+\section{Zadanie}
+
+\textbf{47. Svět Magie} \\ %% TODO prepísať do slovenčiny 
+Kouzelnický svět vytváří informační systém pro evidence kouzel a kouzelníků. Magie v kouzelnickém světě je členěna podle elementů (např. voda, oheň, vzduch,.), které mají různé specializace (obrana, útok, podpora,.) a různé, ale pevně dané, barvy magie (např. ohnivá magie je pomerančově oranžová). Každé kouzlo má pak jeden hlavní element a může mít několik vedlejších elementů (např. voda a led), přičemž každý kouzelník má positivní synergii s určitými elementy. U kouzelníků rovněž evidujeme velikost many, jeho dosaženou úroveň v kouzlení (předpokládáme .klasickou stupnici. E, D, C, B, A, S, SS,.). U jednotlivých kouzel pak jejich úroveň složitosti seslání, typ (útočné, obranné) a sílu. Kouzla všaknemohou být samovolně sesílána, pouze s využitím kouzelnických knih, tzv. grimoárů. Grimoáry v sobě seskupují více připravených kouzel a uchováváme veškerou historii jejich vlastnictví. Grimoáry mohou obsahovat kouzla různých elementů, nicméně jeden z elementů je pro ně primární, přičemž může obsahovat přibližně 10-15 kouzel. S postupem času však grimoáry ztrácejí nabitou magii (přibližně po měsíci ztratí veškerou magii) a je nutno je znovu dobít, ale pouze na dedikovaných místech, kde prosakuje magie (míra prosakování magie daného místa je evidována) určitých typů element (předpokládejte, že na daném místě prosakuje právě jeden typ). Toto nabití však nemusí být provedeno vlastníkem, ale I jiným kouzelníkem. V případě blížícího se vypršení magie grimoáru, systém zašle upozornění vlastníkovi. Alternativním způsobem sesílání magie je pak s využitím svítku, který obsahuje právě jedno kouzlo a po jeho použití se rozpadne.
+\newpage
+%%%%% POPIS IMPLEMENTÁCIE %%%%%% 
+\section{Implementácia}
+%%%%%% TRIGGERY
+\subsection{TRIGGERY}
+\subsubsection{\texttt{element\_sequence} + \texttt{element\_gen\_id}}
+Sekvencia slúži na generovanie \texttt{id\_element} pre tabuľku \texttt{element}. Sekvencia začína na čísle 1, pri každom ďalšom zavolaní sa zvyšuje o 1. Následne nasleduje trigger, ktorý pred pridaním novej položky do tabuľky \texttt{element} zvýši \texttt{id\_element} na základe sekvencie o 1. Vrámci nového spúšťania je pomocou príkazu \texttt{DROP} vymazaná aj aktuálna sekvencia (začína sa znovu od 1).
+\subsubsection{\texttt{grimoar\_history}}
+Tento trigger slúži na ukladanie histórie vlastníctva grimoáru. Zaoberáme sa tu dvoma situáciami - grimoár ešte neexistuje a vkladáme teda nový grimoár alebo grimoár už existuje ale zmenil vlastníka. \newline
+Ak grimoár ešte neexistuje, vložíme pomocou triggeru do tabuľky \texttt{history\_grimoar} nový grimoár, login kúzelníka ktorý vlastní daný grimoár a dátum, kedy začal vlastniť grimoár nastavíme na aktuálny dátum a čas. 
+Ak meníme vlastníctvo grimoáru, ktorý už v tabuľke existuje, tak nastavíme aktuálnemu grimoáru a kúzelníkovi dátum, kedy prestal vlastniť grimoár a vložíme nový údaj (rovnakým spôsobom ako keby sme vkladali nový grimoár). Prípadne, ak nenastavujeme nového vlastníka, tak k aktuálnemu vlastníkovi daného grimoáru nastavíme dátum kedy prestal vlastniť daný grimoár na aktuálny dátum a čas.
+%%%%%% PROCEDÚRY 
+\subsection{PROCEDÚRY}
+\subsubsection{\texttt{win\_rate}}
+Táto procedúra slúži na vyrátanie úspešnosti daného kúzelníka (predaného v parametri) v súbojoch. Ak sa v tabuľkách nachádza viacero kúzelníkov s rovnakým menom, nájdu sa všeci títo kúzelníci a vyráta sa to pre každého kúzelníka zvlášť. Pri výpise sa rozlišujú pomocou \texttt{login}, ktorý je unikátny a slúži aj ako primárny kľúč pre tabuľku \texttt{magician}. Ak sa daný kúzelník nezúčastnil žiadneho súboju, vypíše sa táto informácia. \newline
+Pre predvedenie funkcionality, je procedúra volaná pre kúzelníka \texttt{Hermiona}.
+\subsubsection{\texttt{spells\_in\_grimoar}}
+Procedúra \texttt{spells\_in\_grimoar} slúži na zobrazenie všetkých kúziel, ktoré sa nachádzajú v grimoári, predaného pomocou \texttt{id\_grimoars} do tejto procedúry. Takisto zobrazuje počet, koľkokrát sa tam jednotlivé kúzla nachádzajú v danom grimoáry. Ak je zadané neplatné \texttt{id\_grimoar} tak sa táto informácie tiež vypíše.
+Pre predvedenie funkcionality, je procedúra volaná pre grimoár s ID \texttt{1}
+%%%%%% Pridelenie práv druhému členu týmu 
+\subsection{PRÍSTUPOVÉ PRÁVA}
+Sú pridelené prístupové práve pre druhého člena týmu - v tomto prípade vedúci týmu \texttt{xkocim05} prideluje práve druhému členovi týmu \texttt{xondru16}.
+%%%%%% MATERIALIZED VIEW 
+\subsection{MATERIALIZOVANÝ POHĽAD}
+\subsubsection{spells\_with\_primary\_element\_air}
+Materializovaný pohľad zobrazí tabuľku kúziel (\texttt{spell}), ktoré majú ako primárny element vzduch (\texttt{air}). Následne na predvedenie funkcionality je do tabuľky \texttt{spell} pridané nové kúzlo, ktoré obsahuje element \texttt{air}. Potom je znovu zavolaná tabuľka tohto materializovaného pohľadu a môžeme pozorovať, že sa tam novo-pridané kúzlo nenachádza.
+%%%%%% EXPLAIN PLAN 
+
+\end{document}
