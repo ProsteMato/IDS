@@ -22,9 +22,11 @@ DROP TABLE spells_grimoar CASCADE CONSTRAINTS ;
 DROP TABLE spell CASCADE CONSTRAINTS ;
 DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
 DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
+
 DROP SEQUENCE element_sequence ;
 DROP MATERIALIZED VIEW spells_with_primary_element_air ;
-
+DROP INDEX magician_ind;
+DROP INDEX history_grim_ind;
 
 ----------- CREATE TABLES -----------
 
@@ -233,6 +235,7 @@ CREATE OR REPLACE TRIGGER grimoar_history
             dbms_output.put_line('Some error happened!');
     END;
 /
+
 --------------------------------------------------
 --   Procedure that counts win rate of magician --
 --------------------------------------------------
@@ -577,35 +580,30 @@ VALUES ('Accio', 15, 'charm', 400, 3);
 SELECT * FROM spells_with_primary_element_air;
 
 ------------------------------------------------
-------- Search all items of type grimoar -------
-------  and write's the spells in it ad  -------
-------   primary element of this spell   -------
-------    SELECT with three tables    ----------
+----    Search all magicians and count how  ----
+---       many of grimoars they owned       ----
+-- GROUP BY  with aggregation function COUNT  --
+----             sorted by largest          ----
 ------------------------------------------------
 EXPLAIN PLAN FOR
-SELECT item.name AS grimoar_name,
-       spell.name AS spell_in_grimoar,
-       element.name AS element_name
-FROM item
-INNER JOIN spells_grimoar ON (spells_grimoar.id_grimoar = item.id_item)
-INNER JOIN spell ON (spell.id_spell = spells_grimoar.id_spell)
-INNER JOIN element ON (element.id_element = spell.id_prim_element)
-WHERE item.type = 'grimoar';
+SELECT magician.name AS name_of_magician,
+       COUNT(id_history_grimoar) AS number_of_grimoars
+FROM history_grimoar
+LEFT JOIN magician ON history_grimoar.login_history_magician = magician.login
+GROUP BY magician.name
+ORDER BY COUNT(login_history_magician) DESC;
 
 SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
 
-CREATE INDEX item_type ON item (type);
+CREATE INDEX magician_ind ON magician(name, login);
+CREATE INDEX history_grim_ind ON history_grimoar(login_history_magician);
 
-EXPLAIN PLAN FOR
-SELECT item.name AS grimoar_name,
-       spell.name AS spell_in_grimoar,
-       element.name AS element_name
-FROM item
-INNER JOIN spells_grimoar ON (spells_grimoar.id_grimoar = item.id_item)
-INNER JOIN spell ON (spell.id_spell = spells_grimoar.id_spell)
-INNER JOIN element ON (element.id_element = spell.id_prim_element)
-WHERE item.type = 'grimoar';
+EXPLAIN PLAN  FOR
+SELECT magician.name AS name_of_magician,
+    COUNT(id_history_grimoar) AS number_of_grimoars
+FROM history_grimoar
+LEFT JOIN magician ON history_grimoar.login_history_magician = magician.login
+GROUP BY magician.name
+ORDER BY COUNT(login_history_magician) DESC;
 
 SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
-
-
