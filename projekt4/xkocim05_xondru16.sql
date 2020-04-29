@@ -24,7 +24,7 @@ DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
 DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
 
 DROP SEQUENCE element_sequence ;
--- DROP MATERIALIZED VIEW spells_with_primary_element_air ;
+DROP MATERIALIZED VIEW spells_with_primary_element_air ;
 --DROP INDEX magician_ind;
 --DROP INDEX history_grim_ind;
 
@@ -162,8 +162,8 @@ CREATE TABLE history_grimoar
 CREATE TABLE spells_grimoar
 (
     id INT GENERATED ALWAYS AS IDENTITY NOT NULL PRIMARY KEY,
-    id_grimoar NOT NULL,
-    id_spell NOT NULL,
+    id_grimoar INT NOT NULL,
+    id_spell INT NOT NULL,
     CONSTRAINT id_grimoar_FK_SG
             FOREIGN KEY (id_grimoar)
             REFERENCES item(id_item),
@@ -258,26 +258,41 @@ CREATE OR REPLACE  TRIGGER validity_grimoar
     END;
 /
 
+
+
 CREATE OR REPLACE TRIGGER set_validity_after_adding_spells_to_grimoar
     AFTER INSERT  ON spells_grimoar
-    DECLARE count_spells INT;
+    FOR EACH ROW
+    DECLARE
+        PRAGMA AUTONOMOUS_TRANSACTION;
+        count_spell NUMBER;
     BEGIN
-        SELECT COUNT(id_spell)  into count_spells
+        DBMS_OUTPUT.PUT_LINE(:NEW.id_grimoar);
+        SELECT  COUNT(id_spell) into count_spell
         FROM spells_grimoar
-        WHERE id_grimoar = id_grimoar;
-
-        IF count_spells > 9 AND count_spells < 16
+        WHERE spells_grimoar.id_grimoar = :NEW.id_grimoar;
+        DBMS_OUTPUT.PUT_LINE('GOT RESULT ' ||count_spell);
+        IF count_spell > 9 AND count_spell < 16
         THEN
-            UPDATE item
+            DBMS_OUTPUT.PUT_LINE('TAAA');
+        UPDATE item
             SET valid_grimoar = 'valid'
-            WHERE id_item = id_grimoar;
+            WHERE id_item = :NEW.id_grimoar;
+            COMMIT;
         ELSE
+            DBMS_OUTPUT.PUT_LINE('POMOOOC');
             UPDATE item
             SET valid_grimoar = 'not valid'
-            WHERE id_item = id_grimoar;
-        END IF;
+            WHERE id_item = :NEW.id_grimoar;
+            COMMIT;
+    end if;
+    EXCEPTION
+        WHEN OTHERS THEN
+            DBMS_OUTPUT.PUT_LINE(  'Saved to variable: '||count_spell);
+            DBMS_OUTPUT.PUT_LINE('TAAAAAAA');
     END;
 /
+
 
 
 --------------------------------------------------
@@ -515,7 +530,24 @@ SELECT * from history_grimoar;
 ---------- DATA spells in grimoar -----
 INSERT INTO spells_grimoar(id_grimoar, id_spell)
 VALUES (1, 1);
-
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
+INSERT INTO spells_grimoar(id_grimoar, id_spell)
+VALUES (1, 1);
 INSERT INTO spells_grimoar(id_grimoar, id_spell)
 VALUES (1, 2);
 
@@ -627,4 +659,3 @@ GROUP BY magician.name
 ORDER BY COUNT(login_history_magician) DESC;
 
 SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
-
