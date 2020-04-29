@@ -2,9 +2,9 @@
 * @file xkocim05_xondru16.sql
 *
 * @brief IDS project, part 2  - Svet mágie
-*        SQL script for creating basic object of database's scheme 
+*        SQL script for creating basic object of database's scheme
 *
-* @authors Martin Koči          <xkocim05@stud.fit.vutbr.cz> 
+* @authors Martin Koči          <xkocim05@stud.fit.vutbr.cz>
 *          Magdaléna Ondrušková <xondru16@stud.fit.vutbr.cz>
 *
 * @date  19/03/2020
@@ -24,9 +24,9 @@ DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
 DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
 
 DROP SEQUENCE element_sequence ;
-DROP MATERIALIZED VIEW spells_with_primary_element_air ;
-DROP INDEX magician_ind;
-DROP INDEX history_grim_ind;
+-- DROP MATERIALIZED VIEW spells_with_primary_element_air ;
+--DROP INDEX magician_ind;
+--DROP INDEX history_grim_ind;
 
 ----------- CREATE TABLES -----------
 
@@ -66,6 +66,7 @@ CREATE TABLE item
     login_magician VARCHAR(255) DEFAULT NULL,
     name       VARCHAR(255) NOT NULL,
     type        VARCHAR(255) NOT NULL CHECK ( type = 'grimoar' or type = 'scroll' ),
+    valid_grimoar VARCHAR(10),
     magic_grimoar INT,
     id_grimoar_element INT,
     id_spell_scroll INT,
@@ -197,6 +198,7 @@ CREATE OR REPLACE TRIGGER element_gen_id
     END;
 /
 
+
 ------------------------------------------
 ----  Trigger for saving history of  -----
 ----           grimoars              -----
@@ -235,6 +237,43 @@ CREATE OR REPLACE TRIGGER grimoar_history
             dbms_output.put_line('Some error happened!');
     END;
 /
+
+
+------------------------------------------
+----  Trigger for adding validity    -----
+----   to grimoar after creation     -----
+-----------   TRIGGER 3     --------------
+------------------------------------------
+CREATE OR REPLACE  TRIGGER validity_grimoar
+    AFTER INSERT ON item
+    BEGIN
+        UPDATE item
+        SET valid_grimoar = 'not valid'
+        WHERE item.type = 'grimoar' AND valid_grimoar is NULL;
+    END;
+/
+
+CREATE OR REPLACE TRIGGER set_validity_after_adding_spells_to_grimoar
+    AFTER INSERT  ON spells_grimoar
+    DECLARE count_spells INT;
+    BEGIN
+        SELECT COUNT(id_spell)  into count_spells
+        FROM spells_grimoar
+        WHERE id_grimoar = id_grimoar;
+
+        IF count_spells > 9 AND count_spells < 16
+        THEN
+            UPDATE item
+            SET valid_grimoar = 'valid'
+            WHERE id_item = id_grimoar;
+        ELSE
+            UPDATE item
+            SET valid_grimoar = 'not valid'
+            WHERE id_item = id_grimoar;
+        END IF;
+    END;
+/
+
 
 --------------------------------------------------
 --   Procedure that counts win rate of magician --
@@ -607,3 +646,4 @@ GROUP BY magician.name
 ORDER BY COUNT(login_history_magician) DESC;
 
 SELECT * FROM TABLE(DBMS_XPLAN.DISPLAY);
+
