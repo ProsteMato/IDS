@@ -208,7 +208,9 @@ CREATE OR REPLACE TRIGGER grimoar_history
     AFTER INSERT OR UPDATE ON item
     FOR EACH ROW
     BEGIN
+
         IF INSERTING THEN
+
             IF :NEW.login_magician IS NOT NULL AND :NEW.type = 'grimoar'
             THEN
                 INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
@@ -217,11 +219,14 @@ CREATE OR REPLACE TRIGGER grimoar_history
         END IF;
 
         IF UPDATING THEN
-            IF :NEW.login_magician IS NOT NULL AND :NEW.login_magician != :OLD.login_magician
+            IF :NEW.login_magician IS NOT NULL AND (:NEW.login_magician != :OLD.login_magician OR :OLD.login_magician IS NULL)
             THEN
-                UPDATE history_grimoar
-                SET stopped_owning_date = CURRENT_DATE
-                WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar;
+                IF :OLD.login_magician IS NOT NULL
+                THEN
+                    UPDATE history_grimoar
+                    SET stopped_owning_date = CURRENT_DATE
+                    WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar_FK;
+                END IF;
                 INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
                 VALUES (:NEW.login_magician, :NEW.id_item, CURRENT_DATE);
 
@@ -229,7 +234,7 @@ CREATE OR REPLACE TRIGGER grimoar_history
             THEN
                 UPDATE history_grimoar
                 SET stopped_owning_date = CURRENT_DATE
-                WHERE login_history_magician = :OLD.login_magician AND :OLD.id_item = id_history_grimoar;
+                WHERE login_history_magician = :OLD.login_magician AND :NEW.id_item = id_history_grimoar_FK;
             END IF;
         END IF;
     EXCEPTION
@@ -334,6 +339,7 @@ BEGIN
             DBMS_OUTPUT.PUT_LINE('Some other error.');
 END;
 /
+
 
 
 ------------------------------------------------------------------------
@@ -499,31 +505,6 @@ VALUES (1,'Dumbo12');
 
 INSERT INTO synergy_element(id_synergy_element_FK, login_synergy_magician)
 VALUES (2, 'Harry19');
-
------------ DATA history grimoar ---
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
-VALUES ('Dumbo12',1, TO_DATE( '2020-03-01 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE( '2020-03-27 15:15:00', 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
-VALUES ('Harry19', 1, TO_DATE ('2020-03-27 18:10:26', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-03-28 14:17:00', 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
-VALUES ('Harry19', 2, TO_DATE ('2020-02-10 17:59:25', 'YYYY-MM-DD HH24:MI:SS' ),TO_DATE ('2020-02-15 10:10:10', 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
-VALUES ('Harry19', 3, TO_DATE ('2020-02-01 02:06:08', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-10 12:12:12', 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
-VALUES ('Hermiona99', 2, TO_DATE ('2020-02-20 14:14:58', 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
-VALUES ('Hermiona98', 1, TO_DATE ('2020-03-29 00:00:00' , 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
-VALUES ('Hermiona97', 3, TO_DATE ('2020-03-29 00:00:00' , 'YYYY-MM-DD HH24:MI:SS' ));
-
-INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date, stopped_owning_date)
-VALUES ('Hermiona99', 3, TO_DATE ('2020-02-15 15:45:58', 'YYYY-MM-DD HH24:MI:SS' ), TO_DATE ('2020-02-23 18:25:48', 'YYYY-MM-DD HH24:MI:SS' ));
 
 UPDATE item
 SET login_magician = 'Harry19'
