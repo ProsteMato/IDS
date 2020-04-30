@@ -505,6 +505,7 @@ SELECT * from element;
 SELECT * from history_grimoar;
 INSERT INTO item ( name, type, magic_grimoar, id_grimoar_element)
 VALUES ( 'GRIM10', 'grimoar', 10, 1);
+SELECT * from history_grimoar;
 ----- Inserting new grimoar with owner (its also inserted to history_grimoar)
 INSERT INTO item (login_magician, name, type, magic_grimoar, id_grimoar_element)
 VALUES ('Hermiona99', 'GRIM10', 'grimoar', 10, 1);
@@ -514,7 +515,16 @@ UPDATE item
 SET login_magician = 'Harry19'
 WHERE id_item = 2;
 SELECT * from history_grimoar;
-
+----- Updating existing grimoar in history_grimoar - the grimoar changes its owner
+UPDATE item
+SET login_magician = 'Hermiona99'
+WHERE id_item = 2;
+SELECT * from history_grimoar;
+---- Updating existing grimoar - some magician stopped owning it - in table is set stopped owning date
+UPDATE item
+SET login_magician = NULL
+WHERE id_item = 2;
+SELECT * from history_grimoar;
 -------------------------------------------------
 ---   Example of calling procedure win-rate   ---
 ---           for magician Hermiona           ---
