@@ -581,8 +581,8 @@ SELECT * FROM spells_with_primary_element_air_materialized;
 
 
 --- Add new item into table
-INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
-VALUES ('Accio', 15, 'charm', 400, 3);
+INSERT INTO XKOCIM05.spell(name, hardness_of_casting, type, strength, id_prim_element)
+VALUES ('AccioL', 15, 'charm', 400, 3);
 
 --- Materialized view didn't change
 SELECT * FROM spells_with_primary_element_air_view;
