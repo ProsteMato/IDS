@@ -546,19 +546,19 @@ END;
 ---  Definition of authorization for second  ---
 ---          member of team: xondru16        ---
 ------------------------------------------------
-GRANT ALL ON magician to xondru16;
-GRANT ALL ON history_battles to xondru16;
-GRANT ALL ON element to xondru16;
-GRANT ALL ON magical_place to xondru16;
-GRANT ALL ON item to xondru16;
-GRANT ALL ON history_grimoar to xondru16;
-GRANT ALL ON synergy_element to xondru16;
-GRANT ALL ON spells_grimoar to xondru16;
-GRANT ALL ON side_elements_spell to xondru16;
-GRANT ALL ON spell to xondru16;
+GRANT ALL ON magician to XONDRU16;
+GRANT ALL ON history_battles to XONDRU16;
+GRANT ALL ON element to XONDRU16;
+GRANT ALL ON magical_place to XONDRU16;
+GRANT ALL ON item to XONDRU16;
+GRANT ALL ON history_grimoar to XONDRU16;
+GRANT ALL ON synergy_element to XONDRU16;
+GRANT ALL ON spells_grimoar to XONDRU16;
+GRANT ALL ON side_elements_spell to XONDRU16;
+GRANT ALL ON spell to XONDRU16;
 
-GRANT EXECUTE ON win_rate to xondru16;
-GRANT EXECUTE ON spells_in_grimoar to xondru16;
+GRANT EXECUTE ON win_rate to XONDRU16;
+GRANT EXECUTE ON spells_in_grimoar to XONDRU16;
 
 
 -------------------------------------------------
@@ -567,12 +567,12 @@ GRANT EXECUTE ON spells_in_grimoar to xondru16;
 -------------------------------------------------
 CREATE VIEW spells_with_primary_element_air_view AS
     SELECT name
-    FROM xondru16.spell
+    FROM XKOCIM05.spell
     WHERE id_prim_element = 3;
 
 CREATE MATERIALIZED VIEW spells_with_primary_element_air_materialized AS
     SELECT name
-    FROM xondru16.spell
+    FROM XKOCIM05.spell
     WHERE id_prim_element = 3;
 
 --- Displays materialized view and view
