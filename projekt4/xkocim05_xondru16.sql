@@ -24,9 +24,8 @@ DROP TABLE side_elements_spell CASCADE CONSTRAINTS ;
 DROP TABLE active_grimoar CASCADE CONSTRAINTS ;
 
 DROP SEQUENCE element_sequence ;
-DROP MATERIALIZED VIEW spells_with_primary_element_air ;
---DROP INDEX magician_ind;
---DROP INDEX history_grim_ind;
+DROP VIEW spells_with_primary_element_air_view;
+DROP MATERIALIZED VIEW spells_with_primary_element_air_materialized;
 
 ----------- CREATE TABLES -----------
 
@@ -66,7 +65,6 @@ CREATE TABLE item
     login_magician VARCHAR(255) DEFAULT NULL,
     name       VARCHAR(255) NOT NULL,
     type        VARCHAR(255) NOT NULL CHECK ( type = 'grimoar' or type = 'scroll' ),
-    valid_grimoar VARCHAR(10),
     magic_grimoar INT,
     id_grimoar_element INT,
     id_spell_scroll INT,
@@ -210,7 +208,6 @@ CREATE OR REPLACE TRIGGER grimoar_history
     BEGIN
 
         IF INSERTING THEN
-
             IF :NEW.login_magician IS NOT NULL AND :NEW.type = 'grimoar'
             THEN
                 INSERT INTO history_grimoar(login_history_magician, id_history_grimoar_FK, started_owning_date)
@@ -244,59 +241,9 @@ CREATE OR REPLACE TRIGGER grimoar_history
 /
 
 
-------------------------------------------
-----  Trigger for adding validity    -----
-----   to grimoar after creation     -----
------------   TRIGGER 3     --------------
-------------------------------------------
-CREATE OR REPLACE  TRIGGER validity_grimoar
-    AFTER INSERT ON item
-    BEGIN
-        UPDATE item
-        SET valid_grimoar = 'not valid'
-        WHERE item.type = 'grimoar' AND valid_grimoar is NULL;
-    END;
-/
-
-
-
-CREATE OR REPLACE TRIGGER set_validity_after_adding_spells_to_grimoar
-    AFTER INSERT  ON spells_grimoar
-    FOR EACH ROW
-    DECLARE
-        PRAGMA AUTONOMOUS_TRANSACTION;
-        count_spell NUMBER;
-    BEGIN
-        DBMS_OUTPUT.PUT_LINE(:NEW.id_grimoar);
-        SELECT  COUNT(id_spell) into count_spell
-        FROM spells_grimoar
-        WHERE spells_grimoar.id_grimoar = :NEW.id_grimoar;
-        DBMS_OUTPUT.PUT_LINE('GOT RESULT ' ||count_spell);
-        IF count_spell > 9 AND count_spell < 16
-        THEN
-            DBMS_OUTPUT.PUT_LINE('TAAA');
-        UPDATE item
-            SET valid_grimoar = 'valid'
-            WHERE id_item = :NEW.id_grimoar;
-            COMMIT;
-        ELSE
-            DBMS_OUTPUT.PUT_LINE('POMOOOC');
-            UPDATE item
-            SET valid_grimoar = 'not valid'
-            WHERE id_item = :NEW.id_grimoar;
-            COMMIT;
-    end if;
-    EXCEPTION
-        WHEN OTHERS THEN
-            DBMS_OUTPUT.PUT_LINE(  'Saved to variable: '||count_spell);
-            DBMS_OUTPUT.PUT_LINE('TAAAAAAA');
-    END;
-/
-
-
-
 --------------------------------------------------
 --   Procedure that counts win rate of magician --
+--              PROCEDURE 1                     --
 --------------------------------------------------
 CREATE OR REPLACE PROCEDURE win_rate (name_of_magician IN VARCHAR ) IS
     CURSOR battle_magician IS SELECT * FROM history_battles;
@@ -357,9 +304,11 @@ END;
 
 
 
-------------------------------------------------------------------------
-------- Procedure for displaying number of spells in grimoar      ------
-------------------------------------------------------------------------
+-------------------------------------------
+------- Procedure for displaying   --------
+---        spells in grimoar       --------
+--             PROCEDURE 2         --------
+-------------------------------------------
 CREATE OR REPLACE PROCEDURE spells_in_grimoar (id_grimoaru IN INT) AS
     CURSOR kuzla_v_grim IS SELECT id_spell from spells_grimoar where id_grimoar = id_grimoaru;
     TYPE count_kuzlo IS TABLE OF NUMBER INDEX BY VARCHAR2(255);
@@ -521,31 +470,7 @@ VALUES (1,'Dumbo12');
 INSERT INTO synergy_element(id_synergy_element_FK, login_synergy_magician)
 VALUES (2, 'Harry19');
 
-UPDATE item
-SET login_magician = 'Harry19'
-WHERE id_item = 2;
-
-SELECT * from history_grimoar;
-
 ---------- DATA spells in grimoar -----
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
-INSERT INTO spells_grimoar(id_grimoar, id_spell)
-VALUES (1, 1);
 INSERT INTO spells_grimoar(id_grimoar, id_spell)
 VALUES (1, 1);
 INSERT INTO spells_grimoar(id_grimoar, id_spell)
@@ -569,13 +494,27 @@ INSERT INTO side_elements_spell(id_element, id_spell) VALUES (1, 3);
 -----------------------------------------------
 ------   Demonstration of triggers   ----------
 -----------------------------------------------
+-----     Trigger 1 with sequence     ---------
 SELECT * from element;
 INSERT INTO element(name, color_of_magic, specialization)
 VALUES ('earth', 'brown', 'attack');
 SELECT * from element;
 
+----- Trigger 2  for saving history of grimoars -----
+----- Inserting new grimoar without owner (its not inserted to history_grimoar)
 SELECT * from history_grimoar;
-SELECT * from history_battles;
+INSERT INTO item ( name, type, magic_grimoar, id_grimoar_element)
+VALUES ( 'GRIM10', 'grimoar', 10, 1);
+----- Inserting new grimoar with owner (its also inserted to history_grimoar)
+INSERT INTO item (login_magician, name, type, magic_grimoar, id_grimoar_element)
+VALUES ('Hermiona99', 'GRIM10', 'grimoar', 10, 1);
+SELECT * from history_grimoar;
+----- Updating existing grimoar in item - it is also added to the history_grimoar
+UPDATE item
+SET login_magician = 'Harry19'
+WHERE id_item = 2;
+SELECT * from history_grimoar;
+
 -------------------------------------------------
 ---   Example of calling procedure win-rate   ---
 ---           for magician Hermiona           ---
@@ -613,23 +552,31 @@ GRANT EXECUTE ON spells_in_grimoar to xondru16;
 
 
 -------------------------------------------------
------           Materialized view             ---
----- shows spells with primary element air  ---
+-----      Materialized view  & view          ---
+---- shows spells with primary element air    ---
 -------------------------------------------------
-CREATE MATERIALIZED VIEW spells_with_primary_element_air AS
+CREATE VIEW spells_with_primary_element_air_view AS
     SELECT name
-    FROM xkocim05.spell
+    FROM xondru16.spell
     WHERE id_prim_element = 3;
 
---- Displays materialized view
-SELECT * FROM spells_with_primary_element_air;
+CREATE MATERIALIZED VIEW spells_with_primary_element_air_materialized AS
+    SELECT name
+    FROM xondru16.spell
+    WHERE id_prim_element = 3;
+
+--- Displays materialized view and view
+SELECT * FROM spells_with_primary_element_air_view;
+SELECT * FROM spells_with_primary_element_air_materialized;
+
 
 --- Add new item into table
 INSERT INTO spell(name, hardness_of_casting, type, strength, id_prim_element)
 VALUES ('Accio', 15, 'charm', 400, 3);
 
 --- Materialized view didn't change
-SELECT * FROM spells_with_primary_element_air;
+SELECT * FROM spells_with_primary_element_air_view;
+SELECT * FROM spells_with_primary_element_air_materialized;
 
 ------------------------------------------------
 ----    Search all magicians and count how  ----
@@ -637,6 +584,8 @@ SELECT * FROM spells_with_primary_element_air;
 -- GROUP BY  with aggregation function COUNT  --
 ----             sorted by largest          ----
 ------------------------------------------------
+DROP INDEX magician_ind;
+DROP INDEX history_grim_ind;
 EXPLAIN PLAN FOR
 SELECT magician.name AS name_of_magician,
        COUNT(id_history_grimoar) AS number_of_grimoars
